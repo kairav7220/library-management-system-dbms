@@ -111,8 +111,12 @@ STATUS_COL = {
 
 def get_connection():
     """Return a new MySQL connection from environment variables."""
+    host = os.getenv('MYSQL_HOST', 'localhost')
+    # TiDB Cloud (and any tidbcloud.com host) requires TLS — same as
+    # `mysql --ssl-mode=REQUIRED`. Local MySQL does not.
+    ssl = {'ssl': {}} if 'tidbcloud.com' in host else None
     return pymysql.connect(
-        host=os.getenv('MYSQL_HOST', 'localhost'),
+        host=host,
         port=int(os.getenv('MYSQL_PORT', '3306')),
         user=os.getenv('MYSQL_USER', 'root'),
         password=os.getenv('MYSQL_PASSWORD', 'root'),
@@ -120,6 +124,7 @@ def get_connection():
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor,
         autocommit=True,
+        ssl=ssl,
     )
 
 

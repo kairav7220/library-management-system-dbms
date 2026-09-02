@@ -14,3 +14,4 @@ langchain-mistralai
 psycopg[binary]
 pgvector
 pymysql
+gunicorn
