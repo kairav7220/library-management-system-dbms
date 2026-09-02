@@ -3,33 +3,33 @@
    (code.html) using the palette from DESIGN.md. No Tailwind CDN. */
 
 :root {
-    --lc-background: #f7f9fb;
-    --lc-surface: #f7f9fb;
-    --lc-surface-dim: #d8dadc;
+    --lc-background: #faf7f2;
+    --lc-surface: #ffffff;
+    --lc-surface-dim: #efe8dc;
     --lc-surface-container-lowest: #ffffff;
-    --lc-surface-container-low: #f2f4f6;
-    --lc-surface-container: #eceef0;
-    --lc-surface-container-high: #e6e8ea;
-    --lc-surface-container-highest: #e0e3e5;
-    --lc-surface-variant: #e0e3e5;
-    --lc-on-surface: #191c1e;
-    --lc-on-surface-variant: #434751;
-    --lc-outline: #737783;
-    --lc-outline-variant: #c3c6d3;
-    --lc-primary: #2959ac;
-    --lc-on-primary: #ffffff;
-    --lc-primary-container: #4673c7;
-    --lc-on-primary-container: #fefcff;
-    --lc-primary-fixed-dim: #aec6ff;
-    --lc-secondary: #8f4e00;
-    --lc-secondary-fixed: #ffdcc2;
-    --lc-on-secondary-fixed: #2e1500;
+    --lc-surface-container-low: #f7f3ec;
+    --lc-surface-container: #f4efe6;
+    --lc-surface-container-high: #efe8dc;
+    --lc-surface-container-highest: #e5ddd0;
+    --lc-surface-variant: #e5ddd0;
+    --lc-on-surface: #232019;
+    --lc-on-surface-variant: #3a362c;
+    --lc-outline: #7a7264;
+    --lc-outline-variant: #e5ddd0;
+    --lc-primary: #232019;
+    --lc-on-primary: #faf7f2;
+    --lc-primary-container: #3a362c;
+    --lc-on-primary-container: #faf7f2;
+    --lc-primary-fixed-dim: #7a7264;
+    --lc-secondary: #8a3324;
+    --lc-secondary-fixed: #f6e8e3;
+    --lc-on-secondary-fixed: #58301f;
     --lc-tertiary: #006859;
     --lc-error: #ba1a1a;
     --lc-error-container: #ffdad6;
 
-    --lc-font: "Hanken Grotesk", "Source Sans 3", -apple-system, sans-serif;
-    --lc-shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --lc-font: "Source Sans 3", "Source Sans Pro", -apple-system, sans-serif;
+    --lc-shadow-soft: 0 4px 20px rgba(35, 32, 25, 0.12);
 }
 
 /* ── floating launcher ────────────────────────────────────────────── */
@@ -57,9 +57,9 @@
 .launcher:hover {
     background: var(--lc-primary-container);
     transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(41, 89, 172, 0.22);
+    box-shadow: 0 6px 24px rgba(35, 32, 25, 0.18);
 }
-.launcher:focus-visible { outline: 2px solid var(--lc-primary-fixed-dim); outline-offset: 2px; }
+.launcher:focus-visible { outline: 2px solid var(--lc-primary); outline-offset: 2px; }
 .launcher-icon { font-size: 20px; }
 .launcher.hidden { display: none; }
 

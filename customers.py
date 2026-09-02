@@ -1,21 +1,10 @@
-import gspread
-from google.oauth2.service_account import Credentials
 from dotenv import load_dotenv
 import random
-import os
+from mysql_client import get_worksheet
 
 load_dotenv()
 
-scope = [
-    'https://spreadsheets.google.com/feeds',
-    'https://www.googleapis.com/auth/spreadsheets'
-]
-
-credentials = Credentials.from_service_account_file(os.getenv("GOOGLE_SHEETS_CREDS_PATH"), scopes=scope)
-gc = gspread.authorize(credentials)
-
-sheet = gc.open_by_key(os.getenv('GOOGLE_SHEET_ID'))
-worksheet = sheet.worksheet('Customer Table')
+worksheet = get_worksheet('Customer Table')
 
 def add_customer():
     try:

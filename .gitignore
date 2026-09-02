@@ -24,3 +24,7 @@ DESIGN.md
 code.html
 screen.png
 PLAN.md
+
+# Local AI tooling artifacts
+.agents/
+skills-lock.json

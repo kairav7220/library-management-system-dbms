@@ -1,40 +1,109 @@
-from flask import Flask, jsonify, render_template, request, redirect, url_for, Response
+from flask import Flask, jsonify, render_template, request, redirect, url_for, Response, session, flash, abort
+import json
 from datetime import datetime
 from dotenv import load_dotenv
-import gspread
 import os
-import json
-from google.oauth2.service_account import Credentials
+
+from functools import wraps
+
+from mysql_client import get_worksheet
 
 load_dotenv()
 
-scope = [
-    'https://spreadsheets.google.com/feeds',
-    'https://www.googleapis.com/auth/spreadsheets'
-]
-
-creds_json = os.environ.get('GOOGLE_CREDENTIALS')
-if creds_json:
-    creds_dict = json.loads(creds_json)
-    credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
-else:
-    credentials = Credentials.from_service_account_file('credentials.json', scopes=scope)
-
-gc = gspread.authorize(credentials)
-
-sheet = gc.open_by_key(os.getenv('GOOGLE_SHEET_ID'))
-user_worksheet = sheet.worksheet('User Table')
-book_worksheet = sheet.worksheet('Book Table')
-book_category_ws = sheet.worksheet('Book Category')
-book_genre_ws = sheet.worksheet('Book Genre')
-member_worksheet = sheet.worksheet('Member Table')
-employee_worksheet = sheet.worksheet('Employee Table')
-subscription_worksheet = sheet.worksheet('Subscription Table')
-payment_worksheet =  sheet.worksheet('Payment Table')
-book_sell_worksheet = sheet.worksheet('Book Sell')
-book_issue_worksheet = sheet.worksheet('Book Issue')
+user_worksheet = get_worksheet('User Table')
+book_worksheet = get_worksheet('Book Table')
+book_category_ws = get_worksheet('Book Category')
+book_genre_ws = get_worksheet('Book Genre')
+member_worksheet = get_worksheet('Member Table')
+employee_worksheet = get_worksheet('Employee Table')
+subscription_worksheet = get_worksheet('Subscription Table')
+payment_worksheet =  get_worksheet('Payment Table')
+book_sell_worksheet = get_worksheet('Book Sell')
+book_issue_worksheet = get_worksheet('Book Issue')
+logs_worksheet = get_worksheet('Logs')
 
 app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-me')
+
+# ─── Auth ───────────────────────────────────────────────
+
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'username' not in session:
+            flash('Please log in to continue.', 'warning')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'username' not in session:
+            flash('Please log in to continue.', 'warning')
+            return redirect(url_for('login'))
+        if session.get('user_type') != 'Admin':
+            abort(403)
+        return f(*args, **kwargs)
+    return decorated
+
+@app.context_processor
+def inject_current_user():
+    return {'current_user': session.get('username'), 'current_user_type': session.get('user_type')}
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if 'username' in session:
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        all_values = user_worksheet.get_all_values()
+        user = None
+        for row in all_values[1:]:
+            if str(row[3]) == username and str(row[4]) == password:
+                user = row
+                break
+        if user:
+            session['username'] = username
+            session['user_type'] = user[2] if len(user) > 2 else ''
+            session['user_id'] = user[1] if len(user) > 1 else ''
+            logs_worksheet.append_row(
+                ['=ROW()', datetime.now().strftime('%d-%b-%Y %I:%M:%S %p'), f'{username} logged in'],
+                value_input_option='USER_ENTERED'
+            )
+            flash(f'Welcome back, {username}!', 'success')
+            return redirect(url_for('index'))
+        flash('Invalid username or password.', 'error')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    username = session.get('username')
+    if username:
+        logs_worksheet.append_row(
+            ['=ROW()', datetime.now().strftime('%d-%b-%Y %I:%M:%S %p'), f'{username} logged out'],
+            value_input_option='USER_ENTERED'
+        )
+        session.clear()
+        flash('You have been logged out.', 'success')
+    return redirect(url_for('login'))
+
+@app.route('/logs')
+@admin_required
+def logs():
+    all_values = logs_worksheet.get_all_values()
+    headers = all_values[0]
+    rows = [{'data': r, 'sheet_row': i} for i, r in enumerate(all_values[1:], start=2)]
+    return render_template('logs.html', headers=headers, rows=rows)
+
+@app.before_request
+def require_login():
+    if request.endpoint in ('static', 'login'):
+        return
+    if 'username' not in session:
+        flash('Please log in to continue.', 'warning')
+        return redirect(url_for('login'))
 
 # ─── Users ───────────────────────────────────────────────
 
@@ -44,7 +113,7 @@ def index():
     headers = all_values[0]
     rows = []
     for i, row in enumerate(all_values[1:], start=2):
-        if row[7] == '0':
+        if str(row[7]) == '0':
             rows.append({'data': row, 'sheet_row': i})
     return render_template('index.html', headers=headers, rows=rows)
 
@@ -93,7 +162,7 @@ def books():
     headers = all_values[0]
     rows = []
     for i, row in enumerate(all_values[1:], start=2):
-        if row[9] == '0':
+        if str(row[9]) == '0':
             rows.append({'data': row, 'sheet_row': i})
     return render_template('books.html', headers=headers, rows=rows)
 
@@ -142,7 +211,7 @@ def book_category():
     headers = all_values[0]
     rows = []
     for i, row in enumerate(all_values[1:], start=2):
-        if row[5] == '0':
+        if str(row[5]) == '0':
             rows.append({'data': row, 'sheet_row': i})
     return render_template('book_category.html', headers=headers, rows=rows)
 
@@ -183,7 +252,7 @@ def book_genre():
     headers = all_values[0]
     rows = []
     for i, row in enumerate(all_values[1:], start=2):
-        if row[4] == '0':
+        if str(row[4]) == '0':
             rows.append({'data': row, 'sheet_row': i})
     return render_template('book_genre.html', headers=headers, rows=rows)
 
@@ -222,7 +291,7 @@ def members():
     headers = all_values[0]
     rows = []
     for i, row in enumerate(all_values[1:], start=2):
-        if row[10] == '0':
+        if str(row[10]) == '0':
             rows.append({'data': row, 'sheet_row': i})
     return render_template('members.html', headers=headers, rows=rows)
 
@@ -271,7 +340,7 @@ def employees():
     headers = all_values[0]
     rows = []
     for i, row in enumerate(all_values[1:], start=2):
-        if row[12] == '0':
+        if str(row[12]) == '0':
             rows.append({'data': row, 'sheet_row': i})
     return render_template('employees.html', headers=headers, rows=rows)
 
@@ -324,7 +393,7 @@ def subscriptions():
     headers = all_values[0]
     rows = []
     for i, row in enumerate(all_values[1:], start=2):
-        if row[10] == '0':
+        if str(row[10]) == '0':
             rows.append({'data': row, 'sheet_row': i})
 
     member_data = member_worksheet.get_all_values()

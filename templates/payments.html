@@ -1,99 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
-    <title>{% block title %}Payments · Library{% endblock %}</title>
-</head>
-
-<body>
-    <div class="page">
-        <header class="topbar">
-            <div class="brand">
-                <span class="brand-mark" aria-hidden="true">
-                    <i class="fa-solid fa-credit-card"></i>
-                </span>
-                <div>
-                    <p class="eyebrow">Library Management</p>
-                    <h1>{% block heading %}Payments{% endblock %}</h1>
-                </div>
-            </div>
-            <nav class="topnav">
-                <a href="{{ url_for('index') }}" class="btn btn-ghost btn-sm">Users</a>
-                <a href="{{ url_for('books') }}" class="btn btn-ghost btn-sm">Books</a>
-                <a href="{{ url_for('members') }}" class="btn btn-ghost btn-sm">Members</a>
-                <a href="{{ url_for('employees') }}" class="btn btn-ghost btn-sm">Employees</a>
-                <a href="{{ url_for('book_category') }}" class="btn btn-ghost btn-sm">Book Categories</a>
-                <a href="{{ url_for('book_genre') }}" class="btn btn-ghost btn-sm">Book Genres</a>
-                <a href="{{ url_for('book_issue') }}" class="btn btn-ghost btn-sm">Book Issues</a>
-                <a href="{{ url_for('subscriptions') }}" class="btn btn-ghost btn-sm">Subscriptions</a>
-                <a href="{{ url_for('book_sell') }}" class="btn btn-ghost btn-sm">Book Sells</a>
-                <a href="{{ url_for('payments') }}" class="btn btn-primary btn-sm">Payments</a>
-            </nav>
-        </header>
-
-        {% block content %}
-        <main class="panel">
-            <div class="panel-head">
-                <div>
-                    <h2><i class="fa-solid fa-table-list"></i> Payments</h2>
-                </div>
-                <a href="{{ url_for('add_payment') }}" class="btn btn-primary">
-                    <i class="fa-solid fa-plus"></i>
-                </a>
-            </div>
-
-            <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Transaction ID</th>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Amount</th>
-                        <th>Type</th>
-                        <th>Mode</th>
-                        <th>Status</th>
-                        <th>Paid By</th>
-                        <th>Received By</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in rows %}
-                    <tr>
-                        <td data-label="Transaction ID">{{ row.data[1] }}</td>
-                        <td data-label="Date">{{ row.data[2] }}</td>
-                        <td data-label="Time">{{ row.data[3] }}</td>
-                        <td data-label="Amount">{{ row.data[4] }}</td>
-                        <td data-label="Type">{{ row.data[5] }}</td>
-                        <td data-label="Mode">{{ row.data[6] }}</td>
-                        <td data-label="Status">{{ row.data[7] }}</td>
-                        <td data-label="Paid By">{{ member_names.get(row.data[8], row.data[8]) }}</td>
-                        <td data-label="Received By">{{ employee_names.get(row.data[9], row.data[9]) }}</td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="9" class="empty-state">
-                            <i class="fa-solid fa-inbox"></i>
-                            <p>No payments found.</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            </div>
-        </main>
-        {% endblock %}
-    </div>
-{% include 'chat_widget.html' %}
-</body>
-
-</html>
+{% extends "base.html" %}
+{% set active_nav = "payments" %}
+{% block title %}Payments · Library{% endblock %}
+{% block heading %}Payments{% endblock %}
+{% block content %}
+<main class="panel">
+  <div class="panel-head">
+    <h2><i class="fa-solid fa-table-list"></i> Payments</h2>
+    <a href="{{ url_for('add_payment') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i></a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          {% for h in headers[2:9] %}<th>{{ h }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          {% for cell in row.data[2:9] %}
+          <td data-label="{{ headers[loop.index0 + 2] }}">{{ cell }}</td>
+          {% endfor %}
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="empty-state"><i class="fa-solid fa-inbox"></i><p>No payments found.</p></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Library Management{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">
+          <i class="fa-solid fa-book"></i>
+        </span>
+        <div class="brand-text">
+          <p class="eyebrow">Library Management</p>
+          <h1>{% block heading %}Dashboard{% endblock %}</h1>
+        </div>
+      </div>
+      <nav class="topnav" aria-label="Main navigation">
+        <a href="{{ url_for('index') }}" class="btn btn-sm {% if active_nav == 'users' %}btn-primary{% else %}btn-ghost{% endif %}">Users</a>
+        <a href="{{ url_for('books') }}" class="btn btn-sm {% if active_nav == 'books' %}btn-primary{% else %}btn-ghost{% endif %}">Books</a>
+        <a href="{{ url_for('members') }}" class="btn btn-sm {% if active_nav == 'members' %}btn-primary{% else %}btn-ghost{% endif %}">Members</a>
+        <a href="{{ url_for('employees') }}" class="btn btn-sm {% if active_nav == 'employees' %}btn-primary{% else %}btn-ghost{% endif %}">Employees</a>
+        <a href="{{ url_for('book_category') }}" class="btn btn-sm {% if active_nav == 'categories' %}btn-primary{% else %}btn-ghost{% endif %}">Categories</a>
+        <a href="{{ url_for('book_genre') }}" class="btn btn-sm {% if active_nav == 'genres' %}btn-primary{% else %}btn-ghost{% endif %}">Genres</a>
+        <a href="{{ url_for('book_issue') }}" class="btn btn-sm {% if active_nav == 'issues' %}btn-primary{% else %}btn-ghost{% endif %}">Issues</a>
+        <a href="{{ url_for('subscriptions') }}" class="btn btn-sm {% if active_nav == 'subscriptions' %}btn-primary{% else %}btn-ghost{% endif %}">Subscriptions</a>
+        <a href="{{ url_for('book_sell') }}" class="btn btn-sm {% if active_nav == 'sells' %}btn-primary{% else %}btn-ghost{% endif %}">Sells</a>
+        <a href="{{ url_for('payments') }}" class="btn btn-sm {% if active_nav == 'payments' %}btn-primary{% else %}btn-ghost{% endif %}">Payments</a>
+        {% if current_user_type == 'Admin' %}
+        <a href="{{ url_for('logs') }}" class="btn btn-sm {% if active_nav == 'logs' %}btn-primary{% else %}btn-ghost{% endif %}">Logs</a>
+        {% endif %}
+        <span class="user-chip">
+          <i class="fa-solid fa-circle-user"></i> {{ current_user }}
+          <a href="{{ url_for('logout') }}" class="btn btn-sm btn-danger logout-btn" title="Log out"><i class="fa-solid fa-right-from-bracket"></i></a>
+        </span>
+      </nav>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="flash-stack">
+        {% for category, message in messages %}
+          <p class="flash flash-{{ category }}">{{ message }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </div>
+
+  {% include 'chat_widget.html' %}
+</body>
+</html>

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% set active_nav = "logs" %}
+{% block title %}Activity Logs · Library{% endblock %}
+{% block heading %}Activity logs{% endblock %}
+{% block content %}
+<main class="panel">
+  <div class="panel-head">
+    <h2><i class="fa-solid fa-clock-rotate-left"></i> Activity Logs</h2>
+    <span class="muted">Admin only</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          {% for h in headers[1:] %}<th>{{ h }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          {% for cell in row.data[1:] %}
+          <td data-label="{{ headers[loop.index0 + 1] }}">{{ cell }}</td>
+          {% endfor %}
+        </tr>
+        {% else %}
+        <tr><td colspan="{{ headers|length }}" class="empty-state"><i class="fa-solid fa-inbox"></i><p>No activity logged yet.</p></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</main>
+{% endblock %}

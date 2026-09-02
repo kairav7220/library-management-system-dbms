@@ -13,3 +13,4 @@ langchain-core
 langchain-mistralai
 psycopg[binary]
 pgvector
+pymysql

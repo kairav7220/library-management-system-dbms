@@ -1,27 +1,11 @@
-import gspread
-import os
-from google.oauth2.service_account import Credentials
 from dotenv import load_dotenv
 from datetime import datetime
-from gspread.utils import rowcol_to_a1
+from mysql_client import get_worksheet, rowcol_to_a1
 import random
-import os
 
 load_dotenv()
-print(os.getenv('GOOGLE_SHEET_ID'))
 
-scope = [
-    'https://spreadsheets.google.com/feeds',
-    'https://www.googleapis.com/auth/spreadsheets'
-]
-
-# Replace os.getenv("GOOGLE_CREDENTIALS") with the actual filename string
-credentials = Credentials.from_service_account_file('credentials.json', scopes=scope)
-gc = gspread.authorize(credentials)
-
-# Open the subscriptions sheet
-sheet = gc.open_by_key(os.getenv('GOOGLE_SHEET_ID'))
-worksheet = sheet.worksheet('Payment Table')
+worksheet = get_worksheet('Payment Table')
 
 def add_payment(details):
     values = [

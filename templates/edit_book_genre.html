@@ -1,43 +1,21 @@
 {% extends "book_genre.html" %}
-
-{% block title %}Edit Genre · Library{% endblock %}
-{% block heading %}Edit genre{% endblock %}
-
+{% block title %}Edit Book Genre · Library{% endblock %}
+{% block heading %}Edit book genre{% endblock %}
 {% block content %}
 <main class="panel">
-    <div class="panel-head">
-        <div>
-            <h2><i class="fa-solid fa-pen-to-square"></i> Update genre</h2>
-        </div>
-        <a href="{{ url_for('book_genre') }}" class="btn btn-ghost">
-            <i class="fa-solid fa-arrow-left"></i>
-            Back
-        </a>
+  <div class="panel-head">
+    <h2><i class="fa-solid fa-book-circle-plus"></i> Edit genre</h2>
+    <a href="{{ url_for('book_genre') }}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back</a>
+  </div>
+  <form class="edit-form" method="POST" action="{{ url_for('edit_book_genre', row_num=row_num) }}">
+    <div class="form-group">
+      <label for="book_genre"><i class="fa-solid fa-masks-theater"></i> Genre name</label>
+      <input id="book_genre" type="text" name="book_genre" value="{{ genre[0] }}" required>
     </div>
-
-    <form class="edit-form" method="POST" action="{{ url_for('edit_book_genre', row_num=row_num) }}">
-        <div class="form-group">
-            <label for="genre_title">
-                <i class="fa-solid fa-masks-theater"></i> Genre title
-            </label>
-            <input id="genre_title" type="text" name="genre_title"
-                   value="{{ genre[2] if genre|length > 2 else '' }}" required>
-        </div>
-
-        <div class="form-group">
-            <label for="book_names">
-                <i class="fa-solid fa-book"></i> Books
-            </label>
-            <input id="book_names" type="text" name="book_names"
-                   value="{{ genre[3] if genre|length > 3 else '' }}">
-        </div>
-
-        <div class="form-actions">
-            <a href="{{ url_for('book_genre') }}" class="btn btn-ghost">Cancel</a>
-            <button type="submit" class="btn btn-primary">
-                <i class="fa-solid fa-floppy-disk"></i> Save changes
-            </button>
-        </div>
-    </form>
+    <div class="form-actions">
+      <a href="{{ url_for('book_genre') }}" class="btn btn-ghost">Cancel</a>
+      <button type="submit" class="btn btn-primary">Save changes</button>
+    </div>
+  </form>
 </main>
 {% endblock %}
