@@ -6,7 +6,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def get_connection():
+def get_connection(autocommit=True):
+    """Open a PyMySQL connection.
+
+    autocommit=False returns a connection whose writes you must explicitly
+    commit() or rollback() — used for multi-statement transactions.
+    """
     host = os.getenv('MYSQL_HOST', 'localhost')
     ssl = {'ssl': {}} if 'tidbcloud' in host else None
     return pymysql.connect(
@@ -17,6 +22,6 @@ def get_connection():
         database=os.getenv('MYSQL_DB', 'library_db'),
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor,
-        autocommit=True,
+        autocommit=autocommit,
         ssl=ssl,
     )

@@ -9,8 +9,13 @@
   </div>
   <form class="edit-form" method="POST" action="{{ url_for('return_book_issue', row_num=row_num) }}">
     <div class="form-group">
-      <label for="recieved_by"><i class="fa-solid fa-user-check"></i> Received by</label>
-      <input id="recieved_by" type="text" name="recieved_by" required autocomplete="off">
+      <label for="recieved_by"><i class="fa-solid fa-user-check"></i> Received by (employee)</label>
+      <select id="recieved_by" name="recieved_by" required>
+        <option value="" disabled selected>Select employee</option>
+        {% for emp in employees %}
+        <option value="{{ emp.id }}">{{ emp.label }}</option>
+        {% endfor %}
+      </select>
     </div>
     <div class="form-actions">
       <a href="{{ url_for('book_issue') }}" class="btn btn-ghost">Cancel</a>

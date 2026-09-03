@@ -829,7 +829,8 @@ def add_book_sell():
             flash(f'Could not add sell record: {err}', 'error')
             return render_template('add_book_sell.html')
         try:
-            with get_connection() as conn:
+            conn = get_connection(autocommit=False)
+            try:
                 with conn.cursor() as cur:
                     cur.execute(
                         'INSERT INTO book_sell (order_id, order_date, timestamp, book_id, book_name,'
@@ -837,6 +838,20 @@ def add_book_sell():
                         (order_id, order_date, datetime.now().strftime('%d-%m-%Y %I:%M:%S %p'),
                          book_id, book_name, book_price, mem_id),
                     )
+                    cur.execute(
+                        'INSERT INTO payments (transaction_id, transaction_date, timestamp,'
+                        ' payment_amount, payment_type, payment_mode, payment_status, paid_by,'
+                        ' recieved_by) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                        (_next_id('payments', 'transaction_id', 'TXN'),
+                         order_date, datetime.now().strftime('%H:%M:%S'),
+                         book_price, 'Book Purchase', 'Cash', 'Completed', mem_id, None),
+                    )
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.close()
             flash('Sell record added.', 'success')
             return redirect(url_for('book_sell'))
         except Exception as exc:
@@ -908,7 +923,7 @@ def add_book_issue():
                         'INSERT INTO book_issues (transaction_id, transaction_date, timestamp, book_id,'
                         ' issued_date, issued_to, recieved_by, returned_date) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
                         (txn, transaction_date, datetime.now().strftime('%d-%m-%Y %I:%M:%S %p'),
-                         book_id, issued_date, issued_to, '', ''),
+                         book_id, issued_date, issued_to, None, None),
                     )
             flash('Book issued.', 'success')
             return redirect(url_for('book_issue'))
@@ -927,19 +942,14 @@ def return_book_issue(row_num):
                 with conn.cursor() as cur:
                     cur.execute(
                         'UPDATE book_issues SET recieved_by=%s, returned_date=%s WHERE row_num=%s',
-                        (request.form.get('received_by'), request.form.get('returned_date'), row_num),
+                        (request.form.get('recieved_by'), request.form.get('returned_date'), row_num),
                     )
             flash('Book returned.', 'success')
             return redirect(url_for('book_issue'))
         except Exception as exc:
             flash(f'Could not return book: {_error_message(exc)}', 'error')
-
-    with get_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute('SELECT * FROM book_issues WHERE row_num=%s', (row_num,))
-            row = cur.fetchone()
-    issue_row = _to_list(row, ISSUE_COLS) if row else []
-    return render_template('return_book_issue.html', issue=issue_row, row_num=row_num)
+    return render_template('return_book_issue.html', row_num=row_num,
+                           employees=_id_list('employees', 'emp_id', 'name'))
 
 # ─── AI Assistant (multi-agent) ──────────────────────────
 

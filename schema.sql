@@ -130,7 +130,8 @@ CREATE TABLE IF NOT EXISTS members (
     user_row_num VARCHAR(20),
     permanent_address TEXT,
     temporary_address TEXT,
-    status TINYINT DEFAULT 0
+    status TINYINT DEFAULT 0,
+    CONSTRAINT fk_members_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) AUTO_ID_CACHE = 1;
 
 INSERT INTO members (mem_id, name, user_id, password, email, phone, user_row_num, permanent_address, temporary_address, status) VALUES
@@ -155,7 +156,8 @@ CREATE TABLE IF NOT EXISTS employees (
     user_row_num VARCHAR(20),
     permanent_address TEXT,
     temporary_address TEXT,
-    status TINYINT DEFAULT 0
+    status TINYINT DEFAULT 0,
+    CONSTRAINT fk_employees_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) AUTO_ID_CACHE = 1;
 
 INSERT INTO employees (emp_id, name, user_id, password, email, phone, designation, salary, user_row_num, permanent_address, temporary_address, status) VALUES
@@ -174,7 +176,10 @@ CREATE TABLE IF NOT EXISTS book_issues (
     issued_date VARCHAR(50),
     issued_to VARCHAR(20),
     recieved_by VARCHAR(20),
-    returned_date VARCHAR(50)
+    returned_date VARCHAR(50),
+    CONSTRAINT fk_issues_book FOREIGN KEY (book_id) REFERENCES books(book_id),
+    CONSTRAINT fk_issues_member FOREIGN KEY (issued_to) REFERENCES members(mem_id),
+    CONSTRAINT fk_issues_employee FOREIGN KEY (recieved_by) REFERENCES employees(emp_id)
 ) AUTO_ID_CACHE = 1;
 
 INSERT INTO book_issues (transaction_id, transaction_date, timestamp, book_id, issued_date, issued_to, recieved_by, returned_date) VALUES
@@ -199,7 +204,8 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     plan_type VARCHAR(50),
     plan_start VARCHAR(50),
     plan_end VARCHAR(50),
-    subscription_status TINYINT DEFAULT 0
+    subscription_status TINYINT DEFAULT 0,
+    CONSTRAINT fk_subs_member FOREIGN KEY (mem_id) REFERENCES members(mem_id)
 ) AUTO_ID_CACHE = 1;
 
 INSERT INTO subscriptions (transaction_id, transaction_date, timestamp, plan_mode, mem_id, mem_subscription_amount, plan_type, plan_start, plan_end, subscription_status) VALUES
@@ -222,7 +228,9 @@ CREATE TABLE IF NOT EXISTS payments (
     payment_status VARCHAR(50),
     paid_by VARCHAR(20),
     recieved_by VARCHAR(20),
-    user_row_num VARCHAR(20)
+    user_row_num VARCHAR(20),
+    CONSTRAINT fk_pay_member FOREIGN KEY (paid_by) REFERENCES members(mem_id),
+    CONSTRAINT fk_pay_employee FOREIGN KEY (recieved_by) REFERENCES employees(emp_id)
 ) AUTO_ID_CACHE = 1;
 
 INSERT INTO payments (transaction_id, transaction_date, timestamp, payment_amount, payment_type, payment_mode, payment_status, paid_by, recieved_by, user_row_num) VALUES
@@ -244,7 +252,9 @@ CREATE TABLE IF NOT EXISTS book_sell (
     book_id VARCHAR(20),
     book_name VARCHAR(255),
     book_price DECIMAL(10,2),
-    mem_id VARCHAR(20)
+    mem_id VARCHAR(20),
+    CONSTRAINT fk_sell_book FOREIGN KEY (book_id) REFERENCES books(book_id),
+    CONSTRAINT fk_sell_member FOREIGN KEY (mem_id) REFERENCES members(mem_id)
 ) AUTO_ID_CACHE = 1;
 
 INSERT INTO book_sell (order_id, order_date, timestamp, book_id, book_name, book_price, mem_id) VALUES
