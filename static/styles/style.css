@@ -526,3 +526,19 @@ tbody tr:hover { background: var(--surface-soft); }
 }
 .logout-btn { margin-left: 4px; padding-left: 8px; padding-right: 8px; }
 
+
+.site-footer {
+  margin-top: 40px;
+  padding: 18px 0;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  text-align: center;
+  font-size: 0.85rem;
+  color: rgba(0,0,0,0.55);
+}
+.site-footer a {
+  color: var(--accent, #7a5a1f);
+  font-weight: 600;
+  text-decoration: none;
+}
+.site-footer a:hover { text-decoration: underline; }
+
