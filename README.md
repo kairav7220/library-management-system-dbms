@@ -46,7 +46,7 @@ This is the **DBMS rewrite** of the original Google-Sheets-based app. All CRUD d
 - **⚡ Token-Level Streaming** — Agent replies stream live via Server-Sent Events (SSE) with a typing indicator
 - **📄 Audit Logging** — Every login/logout recorded in the `logs` table
 - **🗂️ Chat History & Resume** — Sessions persist; browse and resume past conversations
-- **🔎 RAG Book Search** — Semantic book discovery via Mistral embeddings + pgvector
+- **🔎 RAG Book Search** (optional) — Semantic book discovery via Mistral embeddings + pgvector, requires a Postgres (`DATABASE_URL`) instance
 - **📱 Responsive UI** — Hanken Grotesk typography, Material 3 chat widget, dark "Reading Room" admin theme
 
 ## Architecture
@@ -77,7 +77,7 @@ flowchart LR
 | **API** | Flask — REST CRUD + `POST /chat/stream` SSE |
 | **Orchestration** | LangGraph StateGraph — classifier routes to 5 react agents |
 | **LLM** | Mistral (`open-mistral-7b` via `langchain-mistralai`) |
-| **RAG** | Mistral embeddings + pgvector (`book_embeddings` table) |
+| **RAG** | Mistral embeddings + pgvector (`book_embeddings` table) — *optional*, needs a Postgres `DATABASE_URL` |
 | **Database** | MySQL 8-compatible relational DB via PyMySQL |
 | **Cloud DB** | TiDB Cloud (MySQL-compatible serverless) |
 | **Deployment** | Render Web Service (`gunicorn flask_app:app`) |
