@@ -189,6 +189,14 @@ MySQL schema (`schema.sql`) — 12 normalized tables:
 
 `queries.sql` contains sample queries demonstrating JOINs, aggregates, and transactions.
 
+The schema enforces **referential integrity with foreign keys** — e.g. `book_sell.mem_id → members(mem_id)`, `book_issues.book_id → books(book_id)`, `payments.recieved_by → employees(emp_id)` — so the DB rejects orphaned or invalid references at insert/update time. Book sales also run as a **database transaction** (sale + matching payment together, committed/rolled back atomically).
+
+To wipe and rebuild the database from scratch (applies schema changes + fresh seed data), run:
+
+```bash
+python reset_db.py    # DROPS all tables, then re-creates + re-seeds from schema.sql
+```
+
 ## Deployment (Render)
 
 Runs as a **Render Web Service** (persistent process — required for MySQL connections and SSE streaming; Vercel serverless is not suitable).
@@ -202,11 +210,13 @@ Runs as a **Render Web Service** (persistent process — required for MySQL conn
 ```
 library-management-system-dbms/
 ├── flask_app.py                # Flask entry — auth, CRUD routes + chat/SSE
-├── schema.sql                  # MySQL schema + seed data (12 tables)
-├── queries.sql                 # Sample SQL queries (JOINs, aggregates)
+├── reset_db.py                 # Admin: drops all tables, re-seeds from schema.sql
+├── schema.sql                  # MySQL schema + seed data (12 tables, FKs)
+├── queries.sql                 # Sample SQL queries (JOINs, aggregates, transactions)
 ├── requirements.txt            # Python dependencies
 ├── .env.example                # Environment variable template
 ├── agents/
+│   ├── orchestrator.py         # Director classifier + graph wiring
 │   ├── director_agent.py       # Library Director (reports, overviews)
 │   ├── catalog_agent.py        # Catalog Librarian (books, categories, genres)
 │   ├── circulation_agent.py    # Circulation Librarian (issue/return/sell)
@@ -221,7 +231,8 @@ library-management-system-dbms/
 │   ├── embedder.py             # pgvector indexing + semantic search
 │   ├── loader.py               # Book document loader
 │   └── config.py               # Embedding model config
-├── tools/                      # Agent tools for each entity
+├── tools/                      # LangChain @tool functions (agent ↔ DB bridge)
+│   └── db.py                   # Shared PyMySQL connection helper
 ├── templates/                  # Jinja2 admin pages
 │   ├── base.html               # Layout (user chip, logout, nav)
 │   ├── login.html              # Login page
@@ -236,12 +247,11 @@ library-management-system-dbms/
 │   ├── book_issue.html         # Book issue page
 │   ├── chat_widget.html        # Lumina Concierge chat widget
 │   └── add_*/edit_*.html       # Create / edit forms
-├── static/
-│   ├── js/chat.js              # Streaming chat widget logic
-│   └── styles/
-│       ├── chat.css            # Material 3 chat styling
-│       └── style.css           # Admin pages styling ("Reading Room" theme)
-└── (entity scripts)            # book.py, members.py, payment.py, …
+└── static/
+    ├── js/chat.js              # Streaming chat widget logic
+    └── styles/
+        ├── chat.css            # Material 3 chat styling
+        └── style.css           # Admin pages styling ("Reading Room" theme)
 ```
 
 ## License

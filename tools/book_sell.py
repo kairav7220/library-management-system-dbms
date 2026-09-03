@@ -10,9 +10,13 @@ def book_sell(details: dict) -> dict:
     """Record a book sale to a member.
 
     details keys: order_date, book_id, book_name, book_price, mem_id.
-    order_id and timestamp auto-generated.
+    order_id, transaction_id and timestamps are auto-generated.
+
+    Runs the sale insert and its matching payment record in one transaction
+    so they succeed or fail together.
     """
-    with get_connection() as conn:
+    conn = get_connection(autocommit=False)
+    try:
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT MAX(CAST(SUBSTRING(order_id, 7) AS UNSIGNED)) AS m FROM book_sell WHERE order_id LIKE 'ORDER\\_%'"
@@ -28,8 +32,30 @@ def book_sell(details: dict) -> dict:
                  details.get("book_id"), details.get("book_name"),
                  details.get("book_price"), details.get("mem_id"))
             )
+            cur.execute(
+                "SELECT MAX(CAST(SUBSTRING(transaction_id, 5) AS UNSIGNED)) AS m"
+                " FROM payments WHERE transaction_id LIKE 'TXN\\_%'"
+            )
+            txn_n = (cur.fetchone()['m'] or 0) + 1
+            transaction_id = f'TXN_{txn_n}'
+            cur.execute(
+                "INSERT INTO payments (transaction_id, transaction_date, timestamp,"
+                " payment_amount, payment_type, payment_mode, payment_status,"
+                " paid_by, recieved_by) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (transaction_id, details.get("order_date"),
+                 datetime.now().strftime("%I:%M:%S %p"),
+                 details.get("book_price"), "Book Purchase", "Cash",
+                 "Completed", details.get("mem_id"), None)
+            )
             cur.execute('SELECT * FROM book_sell WHERE order_id=%s', (order_id,))
-            return cur.fetchone()
+            result = cur.fetchone()
+        conn.commit()
+        return result
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 @tool

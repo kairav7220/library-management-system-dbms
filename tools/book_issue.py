@@ -29,8 +29,9 @@ def book_issue(details: dict) -> dict:
                  details.get("transaction_date") or datetime.now().strftime("%d-%b-%Y"),
                  datetime.now().strftime("%d-%b-%Y %I:%M:%S %p"),
                  details.get("book_id"), details.get("issued_date"),
-                 details.get("mem_id"), details.get("recieved_by", ""),
-                 details.get("returned_date", ""))
+                 details.get("mem_id"),
+                 details.get("recieved_by") or None,
+                 details.get("returned_date") or None)
             )
             cur.execute('SELECT * FROM book_issues WHERE transaction_id=%s', (transaction_id,))
             return cur.fetchone()
