@@ -36,7 +36,7 @@
 
 A full-featured **college DBMS project**: a library management system backed by a real **MySQL** relational database (hosted on **TiDB Cloud**) with a Material 3 chat widget powered by five LangGraph librarian agents. Manage books, members, employees, subscriptions, payments, and issues — or just ask **Lumina Concierge** in plain language.
 
-This is the **DBMS rewrite** of the original Google-Sheets-based app. All CRUD data now lives in a normalized MySQL schema instead of spreadsheets.
+This is the **DBMS rewrite** of the original [Google-Sheets-based app](https://github.com/kairav7220/library-management-system) (Vercel + gspread). All CRUD data now lives in a normalized MySQL schema instead of spreadsheets.
 
 ## Features
 
