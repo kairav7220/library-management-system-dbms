@@ -10,27 +10,27 @@
   <form class="edit-form" method="POST" action="{{ url_for('add_member') }}">
     <div class="form-row">
       <div class="form-group">
-        <label for="mem_id"><i class="fa-solid fa-id-badge"></i> Member ID</label>
-        <input id="mem_id" type="text" name="mem_id" required autocomplete="off">
-      </div>
-      <div class="form-group">
         <label for="name"><i class="fa-solid fa-user"></i> Name</label>
         <input id="name" type="text" name="name" required autocomplete="off">
       </div>
-    </div>
-    <div class="form-row">
       <div class="form-group">
         <label for="email"><i class="fa-solid fa-envelope"></i> Email</label>
         <input id="email" type="email" name="email" required>
       </div>
-      <div class="form-group">
-        <label for="phone"><i class="fa-solid fa-phone"></i> Phone</label>
-        <input id="phone" type="text" name="phone" autocomplete="off">
-      </div>
     </div>
     <div class="form-group">
-      <label for="permanent_address"><i class="fa-solid fa-location-dot"></i> Address</label>
-      <input id="permanent_address" type="text" name="permanent_address" autocomplete="off">
+      <label for="phone"><i class="fa-solid fa-phone"></i> Phone</label>
+      <input id="phone" type="text" name="phone" autocomplete="off">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="permanent_address"><i class="fa-solid fa-location-dot"></i> Permanent address</label>
+        <input id="permanent_address" type="text" name="permanent_address" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="temporary_address"><i class="fa-solid fa-location-dot"></i> Temporary address</label>
+        <input id="temporary_address" type="text" name="temporary_address" autocomplete="off">
+      </div>
     </div>
     <div class="form-actions">
       <a href="{{ url_for('members') }}" class="btn btn-ghost">Cancel</a>

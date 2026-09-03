@@ -1,11 +1,6 @@
 from langchain_core.tools import tool
 
-from tools.gsheets_client import get_all_records, get_worksheet, next_row
-
-SHEET = "Book Table"
-# Book Table columns:
-# row_num, book_id, book_name, book_author, book_price, book_cat,
-# book_genre, edition, publication, status
+from tools.db import get_connection
 
 
 def _reindex_after():
@@ -16,7 +11,7 @@ def _reindex_after():
 
         index_all()
     except Exception as e:
-        print(f"[book.py] reindex failed: {e}")
+        print(f"[tools/book.py] reindex failed: {e}")
 
 
 @tool
@@ -26,23 +21,26 @@ def add_book(details: dict) -> dict:
     details keys: book_name, book_author, book_price, book_cat,
     book_genre, edition, publication. IDs and status are auto-generated.
     """
-    ws = get_worksheet(SHEET)
-    nrow = next_row(SHEET)
-    row_data = [
-        "=ROW()",
-        f'="BOOK_"&A{nrow}-1',
-        details.get("book_name"),
-        details.get("book_author"),
-        details.get("book_price"),
-        details.get("book_cat"),
-        details.get("book_genre"),
-        details.get("edition"),
-        details.get("publication"),
-        "0",
-    ]
-    ws.update([row_data], f"A{nrow}:J{nrow}", value_input_option="USER_ENTERED")
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT MAX(CAST(SUBSTRING(book_id, 6) AS UNSIGNED)) AS m FROM books WHERE book_id LIKE 'BOOK\\_%'"
+            )
+            n = (cur.fetchone()['m'] or 0) + 1
+            book_id = f'BOOK_{n}'
+            cur.execute(
+                'INSERT INTO books (book_id, book_name, book_author, book_price,'
+                ' book_cat, book_genre, edition, publication, status)'
+                ' VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                (book_id, details.get('book_name'), details.get('book_author'),
+                 details.get('book_price'), details.get('book_cat'),
+                 details.get('book_genre'), details.get('edition'),
+                 details.get('publication'), 0)
+            )
+            cur.execute('SELECT * FROM books WHERE book_id=%s', (book_id,))
+            row = cur.fetchone()
     _reindex_after()
-    return get_all_records(SHEET)[-1]
+    return row
 
 
 @tool
@@ -52,33 +50,53 @@ def update_book(row_num: int, details: dict) -> str:
     details keys (any subset): book_name, book_author, book_price, book_cat,
     book_genre, edition, publication.
     """
-    ws = get_worksheet(SHEET)
     col_map = {
-        "book_name": 3,
-        "book_author": 4,
-        "book_price": 5,
-        "book_cat": 6,
-        "book_genre": 7,
-        "edition": 8,
-        "publication": 9,
+        'book_name': 'book_name',
+        'book_author': 'book_author',
+        'book_price': 'book_price',
+        'book_cat': 'book_cat',
+        'book_genre': 'book_genre',
+        'edition': 'edition',
+        'publication': 'publication',
     }
+    fields, vals = [], []
     for key, col in col_map.items():
         if key in details and details[key] is not None:
-            ws.update_cell(row_num, col, details[key])
+            fields.append(f'`{col}`=%s')
+            vals.append(details[key])
+    if fields:
+        vals.append(row_num)
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"UPDATE books SET {', '.join(fields)} WHERE row_num=%s",
+                    tuple(vals)
+                )
     _reindex_after()
-    return f"Book at row {row_num} updated."
+    return f'Book at row {row_num} updated.'
 
 
 @tool
 def get_book_by_row_num(row_num: int) -> list:
     """Get a book's row by its spreadsheet row number."""
-    return get_worksheet(SHEET).get(f"A{row_num}:J{row_num}")
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM books WHERE row_num=%s', (row_num,))
+            row = cur.fetchone()
+    if row:
+        cols = ['row_num', 'book_id', 'book_name', 'book_author', 'book_price',
+                'book_cat', 'book_genre', 'edition', 'publication', 'status']
+        return [row[c] for c in cols]
+    return []
 
 
 @tool
 def get_all_books() -> list[dict]:
     """Get all non-deleted books from the Book Table."""
-    return get_all_records(SHEET)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM books WHERE status=0 ORDER BY row_num')
+            return cur.fetchall()
 
 
 @tool
@@ -87,6 +105,8 @@ def delete_book(row_num: int) -> str:
 
     Call this only AFTER the user has confirmed the deletion.
     """
-    get_worksheet(SHEET).update_acell(f"J{row_num}", 1)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('UPDATE books SET status=1 WHERE row_num=%s', (row_num,))
     _reindex_after()
-    return f"Book at row {row_num} deleted."
+    return f'Book at row {row_num} deleted.'

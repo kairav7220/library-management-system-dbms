@@ -10,12 +10,12 @@
   <form class="edit-form" method="POST" action="{{ url_for('add_employee') }}">
     <div class="form-row">
       <div class="form-group">
-        <label for="emp_id"><i class="fa-solid fa-id-badge"></i> Employee ID</label>
-        <input id="emp_id" type="text" name="emp_id" required autocomplete="off">
-      </div>
-      <div class="form-group">
         <label for="name"><i class="fa-solid fa-user"></i> Name</label>
         <input id="name" type="text" name="name" required autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="designation"><i class="fa-solid fa-briefcase"></i> Designation</label>
+        <input id="designation" type="text" name="designation" autocomplete="off">
       </div>
     </div>
     <div class="form-row">
@@ -28,9 +28,19 @@
         <input id="phone" type="text" name="phone" autocomplete="off">
       </div>
     </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="salary"><i class="fa-solid fa-dollar-sign"></i> Salary</label>
+        <input id="salary" type="text" name="salary" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="permanent_address"><i class="fa-solid fa-location-dot"></i> Permanent address</label>
+        <input id="permanent_address" type="text" name="permanent_address" autocomplete="off">
+      </div>
+    </div>
     <div class="form-group">
-      <label for="designation"><i class="fa-solid fa-briefcase"></i> Designation</label>
-      <input id="designation" type="text" name="designation" autocomplete="off">
+      <label for="temporary_address"><i class="fa-solid fa-location-dot"></i> Temporary address</label>
+      <input id="temporary_address" type="text" name="temporary_address" autocomplete="off">
     </div>
     <div class="form-actions">
       <a href="{{ url_for('employees') }}" class="btn btn-ghost">Cancel</a>

@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(150),
     phone VARCHAR(15),
     status TINYINT DEFAULT 0
-);
+) AUTO_ID_CACHE = 1;
 
 INSERT INTO users (user_id, user_type, username, password, email, phone, status) VALUES
 ('USER_1','Admin','admin','admin123','admin@library.com','9876543210',0),
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS book_category (
     description TEXT,
     book_names TEXT,
     status TINYINT DEFAULT 0
-);
+) AUTO_ID_CACHE = 1;
 
 INSERT INTO book_category (cat_id, cat_name, description, book_names, status) VALUES
 ('CAT_1','Fiction','Novels and literary works across genres','To Kill a Mockingbird, 1984, Pride and Prejudice, The Great Gatsby, The Alchemist, Interpreter of Maladies, The God of Small Things, Midnight Children, Five Point Someone, The Immortals of Meluha, Life of Pi',0),
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS book_genre (
     genre_title VARCHAR(100) NOT NULL,
     book_names TEXT,
     status TINYINT DEFAULT 0
-);
+) AUTO_ID_CACHE = 1;
 
 INSERT INTO book_genre (genre_id, genre_title, book_names, status) VALUES
 ('GENRE_1','Classic','To Kill a Mockingbird, 1984, The Great Gatsby, Pride and Prejudice',0),
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS books (
     edition VARCHAR(50),
     publication VARCHAR(255),
     status TINYINT DEFAULT 0
-);
+) AUTO_ID_CACHE = 1;
 
 INSERT INTO books (book_id, book_name, book_author, book_price, book_cat, book_genre, edition, publication, status) VALUES
 ('BOOK_1','To Kill a Mockingbird','Harper Lee',350,'Fiction','Classic','1st','J.B. Lippincott',0),
@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS members (
     permanent_address TEXT,
     temporary_address TEXT,
     status TINYINT DEFAULT 0
-);
+) AUTO_ID_CACHE = 1;
 
 INSERT INTO members (mem_id, name, user_id, password, email, phone, user_row_num, permanent_address, temporary_address, status) VALUES
 ('MEM_1','Amit Sharma','USER_4','pass123','amit@gmail.com','9876543213',5,'Sector 17, Chandigarh','Sector 12, Kharar',0),
@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS employees (
     permanent_address TEXT,
     temporary_address TEXT,
     status TINYINT DEFAULT 0
-);
+) AUTO_ID_CACHE = 1;
 
 INSERT INTO employees (emp_id, name, user_id, password, email, phone, designation, salary, user_row_num, permanent_address, temporary_address, status) VALUES
 ('EMP_1','Priya Mehta','USER_2','pass123','priya@library.com','9876543211','Head Librarian',35000,3,'Phase 3, Mohali','Sector 20, Chandigarh',0),
@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS book_issues (
     issued_to VARCHAR(20),
     recieved_by VARCHAR(20),
     returned_date VARCHAR(50)
-);
+) AUTO_ID_CACHE = 1;
 
 INSERT INTO book_issues (transaction_id, transaction_date, timestamp, book_id, issued_date, issued_to, recieved_by, returned_date) VALUES
 ('TXN_1','2026-01-20','2026-01-20 11:00:00','BOOK_1','2026-01-20','MEM_1','EMP_1',NULL),
@@ -200,7 +200,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     plan_start VARCHAR(50),
     plan_end VARCHAR(50),
     subscription_status TINYINT DEFAULT 0
-);
+) AUTO_ID_CACHE = 1;
 
 INSERT INTO subscriptions (transaction_id, transaction_date, timestamp, plan_mode, mem_id, mem_subscription_amount, plan_type, plan_start, plan_end, subscription_status) VALUES
 ('TXN_1','2026-01-15','2026-01-15 10:30:00','Online','MEM_1',500,'Monthly','2026-01-15','2026-02-15',0),
@@ -223,7 +223,7 @@ CREATE TABLE IF NOT EXISTS payments (
     paid_by VARCHAR(20),
     recieved_by VARCHAR(20),
     user_row_num VARCHAR(20)
-);
+) AUTO_ID_CACHE = 1;
 
 INSERT INTO payments (transaction_id, transaction_date, timestamp, payment_amount, payment_type, payment_mode, payment_status, paid_by, recieved_by, user_row_num) VALUES
 ('TXN_1','2026-01-15','10:30:00',500,'Subscription','UPI','Completed','MEM_1','EMP_1',5),
@@ -245,7 +245,7 @@ CREATE TABLE IF NOT EXISTS book_sell (
     book_name VARCHAR(255),
     book_price DECIMAL(10,2),
     mem_id VARCHAR(20)
-);
+) AUTO_ID_CACHE = 1;
 
 INSERT INTO book_sell (order_id, order_date, timestamp, book_id, book_name, book_price, mem_id) VALUES
 ('ORDER_1','2026-01-10','2026-01-10 10:00:00','BOOK_8','The Alchemist',280,'MEM_1'),
@@ -261,7 +261,7 @@ CREATE TABLE IF NOT EXISTS logs (
     row_num INT PRIMARY KEY AUTO_INCREMENT,
     timestamp VARCHAR(50),
     action VARCHAR(255)
-);
+) AUTO_ID_CACHE = 1;
 
 -- ============================================================
 -- 12. CUSTOMERS
@@ -272,5 +272,5 @@ CREATE TABLE IF NOT EXISTS customers (
     name VARCHAR(100),
     username VARCHAR(100),
     password VARCHAR(255)
-);
+) AUTO_ID_CACHE = 1;
 

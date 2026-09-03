@@ -1,51 +1,61 @@
-from dotenv import load_dotenv
+import os, pymysql
 from datetime import datetime
-from mysql_client import get_worksheet, rowcol_to_a1
-import random
-
+from dotenv import load_dotenv
 load_dotenv()
 
-worksheet = get_worksheet('Payment Table')
+def get_connection():
+    host = os.getenv('MYSQL_HOST', 'localhost')
+    ssl = {'ssl': {}} if 'tidbcloud' in host else None
+    conn = pymysql.connect(
+        host=host,
+        port=int(os.getenv('MYSQL_PORT', '3306')),
+        user=os.getenv('MYSQL_USER', 'root'),
+        password=os.getenv('MYSQL_PASSWORD', 'root'),
+        database=os.getenv('MYSQL_DB', 'library_db'),
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor,
+        autocommit=True,
+        ssl=ssl
+    )
+    return conn
 
-def add_payment(details):
-    values = [
-        details.get('row_num'),
-        details.get('transaction_id'),
-        details.get('transaction_date'),
-        details.get('timestamp'),
-        details.get('payment_amount'),
-        details.get('payment_type'),
-        details.get('payment_mode'),
-        details.get('payment_status'),
-        details.get('paid_by'),
-        details.get('recieved_by'),
-        details.get('user_row_num')
-    ]
-    worksheet.append_row(values, value_input_option='USER_ENTERED')
+def next_txn_id():
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT MAX(CAST(SUBSTRING(transaction_id, 5) AS UNSIGNED)) AS m FROM payments WHERE transaction_id LIKE 'TXN\\_%'")
+            n = (cur.fetchone()['m'] or 0) + 1
+    return f'TXN_{n}'
 
-paymen_details = {
-    'row_num': '=ROW()',
-    'transaction_id': 'TXN_1',
-    'transaction_date': '22-Jan-2026',
-    'timestamp': datetime.now().strftime('%I:%M:%S %p'),
-    'payment_amount': 200,
-    'payment_type': 'Subscription',
-    'payment_mode': 'Cash',
-    'payment_status': 'Accepted',
-    'paid_by': 'MEM_1',
-    'recieved_by': 'EMP_1',
-    'user_row_num': 2
-}
-print(add_payment(paymen_details))
+def add_payment(transaction_date, payment_amount, payment_type, payment_mode,
+                payment_status, paid_by, recieved_by, user_row_num):
+    transaction_id = next_txn_id()
+    timestamp = datetime.now().strftime('%I:%M:%S %p')
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO payments (transaction_id, transaction_date, timestamp, payment_amount,"
+                " payment_type, payment_mode, payment_status, paid_by, recieved_by, user_row_num)"
+                " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (transaction_id, transaction_date, timestamp, payment_amount,
+                 payment_type, payment_mode, payment_status, paid_by,
+                 recieved_by, user_row_num)
+            )
+    return transaction_id
 
 def get_payment_by_row_num(row_num):
-    row_values = worksheet.get(f'A{row_num}:K{row_num}')
-    print(row_values)
-
-get_payment_by_row_num(2)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM payments WHERE row_num=%s', (row_num,))
+            return cur.fetchone()
 
 def get_all_payments():
-    all_values = worksheet.get_all_values()
-    print(all_values)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM payments ORDER BY row_num')
+            return cur.fetchall()
 
-get_all_payments()
+if __name__ == '__main__':
+    print(add_payment('22-Jan-2026', 200, 'Subscription', 'Cash',
+                      'Accepted', 'MEM_1', 'EMP_1', 2))
+    print(get_payment_by_row_num(2))
+    print(get_all_payments())

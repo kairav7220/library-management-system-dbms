@@ -10,12 +10,22 @@
   <form class="edit-form" method="POST" action="{{ url_for('add_book_issue') }}">
     <div class="form-row">
       <div class="form-group">
-        <label for="book_id"><i class="fa-solid fa-book"></i> Book ID</label>
-        <input id="book_id" type="text" name="book_id" required autocomplete="off">
+        <label for="book_id"><i class="fa-solid fa-book"></i> Book</label>
+        <select id="book_id" name="book_id" required>
+          <option value="">Select book…</option>
+          {% for b in books %}
+            <option value="{{ b.id }}">{{ b.label }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div class="form-group">
-        <label for="issued_to"><i class="fa-solid fa-user"></i> Issued to</label>
-        <input id="issued_to" type="text" name="issued_to" required autocomplete="off">
+        <label for="issued_to"><i class="fa-solid fa-user"></i> Issued to (member)</label>
+        <select id="issued_to" name="issued_to" required>
+          <option value="">Select member…</option>
+          {% for m in members %}
+            <option value="{{ m.id }}">{{ m.label }}</option>
+          {% endfor %}
+        </select>
       </div>
     </div>
     <div class="form-row">
@@ -24,8 +34,13 @@
         <input id="issued_date" type="text" name="issued_date" placeholder="YYYY-MM-DD" required>
       </div>
       <div class="form-group">
-        <label for="recieved_by"><i class="fa-solid fa-user-check"></i> Received by</label>
-        <input id="recieved_by" type="text" name="recieved_by" autocomplete="off">
+        <label for="recieved_by"><i class="fa-solid fa-user-check"></i> Received by (employee)</label>
+        <select id="recieved_by" name="recieved_by">
+          <option value="">Select employee…</option>
+          {% for e in employees %}
+            <option value="{{ e.id }}">{{ e.label }}</option>
+          {% endfor %}
+        </select>
       </div>
     </div>
     <div class="form-actions">

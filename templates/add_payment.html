@@ -24,13 +24,23 @@
         <input id="payment_mode" type="text" name="payment_mode" autocomplete="off">
       </div>
       <div class="form-group">
-        <label for="paid_by"><i class="fa-solid fa-user"></i> Paid by</label>
-        <input id="paid_by" type="text" name="paid_by" autocomplete="off">
+        <label for="paid_by"><i class="fa-solid fa-user"></i> Paid by (member)</label>
+        <select id="paid_by" name="paid_by">
+          <option value="">Select member…</option>
+          {% for m in members %}
+            <option value="{{ m.id }}">{{ m.label }}</option>
+          {% endfor %}
+        </select>
       </div>
     </div>
     <div class="form-group">
-      <label for="recieved_by"><i class="fa-solid fa-user-check"></i> Received by</label>
-      <input id="recieved_by" type="text" name="recieved_by" autocomplete="off">
+      <label for="recieved_by"><i class="fa-solid fa-user-check"></i> Received by (employee)</label>
+      <select id="recieved_by" name="recieved_by">
+        <option value="">Select employee…</option>
+        {% for e in employees %}
+          <option value="{{ e.id }}">{{ e.label }}</option>
+        {% endfor %}
+      </select>
     </div>
     <div class="form-actions">
       <a href="{{ url_for('payments') }}" class="btn btn-ghost">Cancel</a>

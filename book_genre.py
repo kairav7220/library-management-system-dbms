@@ -1,62 +1,78 @@
+import os, pymysql
 from dotenv import load_dotenv
-from mysql_client import get_worksheet
-
 load_dotenv()
 
-worksheet = get_worksheet('Book Genre')
+def get_connection():
+    host = os.getenv('MYSQL_HOST', 'localhost')
+    ssl = {'ssl': {}} if 'tidbcloud' in host else None
+    conn = pymysql.connect(
+        host=host,
+        port=int(os.getenv('MYSQL_PORT', '3306')),
+        user=os.getenv('MYSQL_USER', 'root'),
+        password=os.getenv('MYSQL_PASSWORD', 'root'),
+        database=os.getenv('MYSQL_DB', 'library_db'),
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor,
+        autocommit=True,
+        ssl=ssl
+    )
+    return conn
 
-def add_book(details):
-    values = [
-        details.get('row_num'),
-        details.get('genre_id'),
-        details.get('genre_title'),
-        details.get('book_names'),
-        details.get('status')
-    ]
-    worksheet.append_row(values, value_input_option='USER_ENTERED')
+def next_genre_id():
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT MAX(CAST(SUBSTRING(genre_id, 7) AS UNSIGNED)) AS m FROM book_genre WHERE genre_id LIKE 'GENRE\\_%'")
+            n = (cur.fetchone()['m'] or 0) + 1
+    return f'GENRE_{n}'
 
-book_details = {
-    'row_num': '=ROW()',
-    'genre_id': 'GENRE_1',
-    'genre_title': 'Science Fiction',
-    'book_names': 'Dune, Neuromancer, Foundation',
-    'status': 0
-}
+def add_genre(genre_title, book_names):
+    genre_id = next_genre_id()
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO book_genre (genre_id, genre_title, book_names, status)"
+                " VALUES (%s,%s,%s,%s)",
+                (genre_id, genre_title, book_names, 0)
+            )
+    return genre_id
 
-print(add_book(book_details))
+def update_genre(row_num, *, genre_title=None, book_names=None):
+    fields, vals = [], []
+    for col, v in (('genre_title', genre_title), ('book_names', book_names)):
+        if v is not None:
+            fields.append(f'`{col}`=%s')
+            vals.append(v)
+    if not fields:
+        return row_num
+    vals.append(row_num)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"UPDATE book_genre SET {', '.join(fields)} WHERE row_num = %s",
+                tuple(vals)
+            )
+    return row_num
 
-update_detail = {
-    'row_num': '=ROW()',
-    'genre_id': 'GENRE_1',
-    'genre_title': 'Fantasy',
-    'book_names': 'The Hobbit, Harry Potter, Game of Thrones',
-    'status': 0
-}
+def get_genre_by_row_num(row_num):
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM book_genre WHERE row_num=%s', (row_num,))
+            return cur.fetchone()
 
-def update_book(row_num, details):
-    values = [[
-        details.get('row_num'),
-        details.get('genre_id'),
-        details.get('genre_title'),
-        details.get('book_names'),
-        details.get('status')
-    ]]
-    worksheet.update(values, f'A{row_num}:E{row_num}', value_input_option='USER_ENTERED')
+def get_all_genres():
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM book_genre WHERE status=0 ORDER BY row_num')
+            return cur.fetchall()
 
-update_book(2, update_detail)
+def delete_genre(row_num):
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('UPDATE book_genre SET status=1 WHERE row_num=%s', (row_num,))
+    return row_num
 
-def get_book_by_row_num(row_num):
-    row_values = worksheet.get(f'A{row_num}:E{row_num}')
-    print(row_values)
-get_book_by_row_num(2)
-
-def get_all_books():
-    all_values = worksheet.get_all_values()
-    print(all_values)
-
-get_all_books()
-
-def delete_book(row_num):
-    delete_value = worksheet.update_acell(f'E{row_num}', 1)
-    print(delete_value)
-delete_book(2)
+if __name__ == '__main__':
+    print(add_genre('Science Fiction', 'Dune, Neuromancer, Foundation'))
+    print(get_genre_by_row_num(2))
+    print(get_all_genres())
+    print(delete_genre(2))

@@ -11,26 +11,36 @@
     <div class="form-row">
       <div class="form-group">
         <label for="mem_id"><i class="fa-solid fa-id-badge"></i> Member ID</label>
-        <input id="mem_id" type="text" name="mem_id" value="{{ member[0] }}" required>
+        <p class="readonly-id">{{ member[1] }}</p>
       </div>
       <div class="form-group">
         <label for="name"><i class="fa-solid fa-user"></i> Name</label>
-        <input id="name" type="text" name="name" value="{{ member[1] }}" required>
+        <input id="name" type="text" name="name" value="{{ member[2] }}" required>
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label for="email"><i class="fa-solid fa-envelope"></i> Email</label>
-        <input id="email" type="email" name="email" value="{{ member[3] }}" required>
+        <label for="password"><i class="fa-solid fa-lock"></i> Password</label>
+        <input id="password" type="password" name="password" value="{{ member[4] }}">
       </div>
       <div class="form-group">
+        <label for="email"><i class="fa-solid fa-envelope"></i> Email</label>
+        <input id="email" type="email" name="email" value="{{ member[5] }}" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
         <label for="phone"><i class="fa-solid fa-phone"></i> Phone</label>
-        <input id="phone" type="text" name="phone" value="{{ member[4] }}">
+        <input id="phone" type="text" name="phone" value="{{ member[6] }}">
+      </div>
+      <div class="form-group">
+        <label for="permanent_address"><i class="fa-solid fa-location-dot"></i> Permanent address</label>
+        <input id="permanent_address" type="text" name="permanent_address" value="{{ member[8] }}">
       </div>
     </div>
     <div class="form-group">
-      <label for="permanent_address"><i class="fa-solid fa-location-dot"></i> Address</label>
-      <input id="permanent_address" type="text" name="permanent_address" value="{{ member[7] }}">
+      <label for="temporary_address"><i class="fa-solid fa-location-dot"></i> Temporary address</label>
+      <input id="temporary_address" type="text" name="temporary_address" value="{{ member[9] }}">
     </div>
     <div class="form-actions">
       <a href="{{ url_for('members') }}" class="btn btn-ghost">Cancel</a>

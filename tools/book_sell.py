@@ -2,12 +2,7 @@ from datetime import datetime
 
 from langchain_core.tools import tool
 
-from tools.gsheets_client import get_all_records, get_worksheet, next_row
-
-SHEET = "Book Sell"
-# Book Sell columns:
-# row_num, order_id, order_date, timestamp, book_id, book_name,
-# book_price, mem_id
+from tools.db import get_connection
 
 
 @tool
@@ -17,20 +12,24 @@ def book_sell(details: dict) -> dict:
     details keys: order_date, book_id, book_name, book_price, mem_id.
     order_id and timestamp auto-generated.
     """
-    ws = get_worksheet(SHEET)
-    nrow = next_row(SHEET)
-    row_data = [
-        "=ROW()",
-        f'="ORDER_"&A{nrow}-1',
-        details.get("order_date"),
-        datetime.now().strftime("%d-%b-%Y %I:%M:%S %p"),
-        details.get("book_id"),
-        details.get("book_name"),
-        details.get("book_price"),
-        details.get("mem_id"),
-    ]
-    ws.update([row_data], f"A{nrow}:H{nrow}", value_input_option="USER_ENTERED")
-    return get_all_records(SHEET)[-1]
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT MAX(CAST(SUBSTRING(order_id, 7) AS UNSIGNED)) AS m FROM book_sell WHERE order_id LIKE 'ORDER\\_%'"
+            )
+            n = (cur.fetchone()['m'] or 0) + 1
+            order_id = f'ORDER_{n}'
+            cur.execute(
+                "INSERT INTO book_sell (order_id, order_date, timestamp, book_id,"
+                " book_name, book_price, mem_id)"
+                " VALUES (%s,%s,%s,%s,%s,%s,%s)",
+                (order_id, details.get("order_date"),
+                 datetime.now().strftime("%d-%b-%Y %I:%M:%S %p"),
+                 details.get("book_id"), details.get("book_name"),
+                 details.get("book_price"), details.get("mem_id"))
+            )
+            cur.execute('SELECT * FROM book_sell WHERE order_id=%s', (order_id,))
+            return cur.fetchone()
 
 
 @tool
@@ -40,21 +39,33 @@ def update_book_sell(row_num: int, details: dict) -> str:
     details keys (any subset): order_date, book_id, book_name, book_price,
     mem_id.
     """
-    ws = get_worksheet(SHEET)
     col_map = {
-        "order_date": 3,
-        "book_id": 5,
-        "book_name": 6,
-        "book_price": 7,
-        "mem_id": 8,
+        "order_date": "order_date",
+        "book_id": "book_id",
+        "book_name": "book_name",
+        "book_price": "book_price",
+        "mem_id": "mem_id",
     }
+    fields, vals = [], []
     for key, col in col_map.items():
         if key in details and details[key] is not None:
-            ws.update_cell(row_num, col, details[key])
+            fields.append(f'`{col}`=%s')
+            vals.append(details[key])
+    if fields:
+        vals.append(row_num)
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"UPDATE book_sell SET {', '.join(fields)} WHERE row_num=%s",
+                    tuple(vals)
+                )
     return f"Book sell order at row {row_num} updated."
 
 
 @tool
 def get_all_book_sells() -> list[dict]:
     """Get all book sale records."""
-    return get_all_records(SHEET)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM book_sell ORDER BY row_num')
+            return cur.fetchall()

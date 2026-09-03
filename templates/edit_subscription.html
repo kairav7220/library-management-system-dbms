@@ -10,22 +10,36 @@
   <form class="edit-form" method="POST" action="{{ url_for('edit_subscription', row_num=row_num) }}">
     <div class="form-row">
       <div class="form-group">
-        <label for="mem_id"><i class="fa-solid fa-user"></i> Member ID</label>
-        <input id="mem_id" type="text" name="mem_id" value="{{ subscription[1] }}" required>
+        <label for="transaction_id"><i class="fa-solid fa-receipt"></i> Transaction ID</label>
+        <p class="readonly-id">{{ subscription[1] }}</p>
       </div>
       <div class="form-group">
-        <label for="plan_mode"><i class="fa-solid fa-clock"></i> Plan mode</label>
-        <input id="plan_mode" type="text" name="plan_mode" value="{{ subscription[0] }}" required>
+        <label for="mem_id"><i class="fa-solid fa-user"></i> Member</label>
+        <select id="mem_id" name="mem_id" required>
+          {% for m in members %}
+            <option value="{{ m.id }}" {% if m.id == subscription[5] %}selected{% endif %}>{{ m.label }}</option>
+          {% endfor %}
+        </select>
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label for="mem_subscription_amount"><i class="fa-solid fa-dollar-sign"></i> Amount</label>
-        <input id="mem_subscription_amount" type="number" step="0.01" name="mem_subscription_amount" value="{{ subscription[2] }}" required>
+        <label for="plan_mode"><i class="fa-solid fa-clock"></i> Plan mode</label>
+        <input id="plan_mode" type="text" name="plan_mode" value="{{ subscription[4] }}" required>
       </div>
       <div class="form-group">
+        <label for="mem_subscription_amount"><i class="fa-solid fa-dollar-sign"></i> Amount</label>
+        <input id="mem_subscription_amount" type="number" step="0.01" name="mem_subscription_amount" value="{{ subscription[6] }}" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
         <label for="plan_type"><i class="fa-solid fa-tag"></i> Plan type</label>
-        <input id="plan_type" type="text" name="plan_type" value="{{ subscription[3] }}">
+        <input id="plan_type" type="text" name="plan_type" value="{{ subscription[7] }}">
+      </div>
+      <div class="form-group">
+        <label for="subscription_status"><i class="fa-solid fa-circle-check"></i> Status (0 active / 1 closed)</label>
+        <input id="subscription_status" type="text" name="subscription_status" value="{{ subscription[10] }}">
       </div>
     </div>
     <div class="form-actions">

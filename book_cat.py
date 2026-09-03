@@ -1,80 +1,93 @@
+import os, pymysql
 from dotenv import load_dotenv
-from mysql_client import get_worksheet
-
 load_dotenv()
 
-worksheet = get_worksheet('Book Category')
+def get_connection():
+    host = os.getenv('MYSQL_HOST', 'localhost')
+    ssl = {'ssl': {}} if 'tidbcloud' in host else None
+    conn = pymysql.connect(
+        host=host,
+        port=int(os.getenv('MYSQL_PORT', '3306')),
+        user=os.getenv('MYSQL_USER', 'root'),
+        password=os.getenv('MYSQL_PASSWORD', 'root'),
+        database=os.getenv('MYSQL_DB', 'library_db'),
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor,
+        autocommit=True,
+        ssl=ssl
+    )
+    return conn
 
-def add_category(details):
-    values = [
-        details.get('row_num'),
-        details.get('cat_id'),
-        details.get('cat_name'),
-        details.get('description'),
-        details.get('book_names'),
-        details.get('status')
-    ]
-    worksheet.append_row(values, value_input_option='USER_ENTERED')
+def next_cat_id():
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT MAX(CAST(SUBSTRING(cat_id, 5) AS UNSIGNED)) AS m FROM book_category WHERE cat_id LIKE 'CAT\\_%'")
+            n = (cur.fetchone()['m'] or 0) + 1
+    return f'CAT_{n}'
 
-category_details = {
-    'row_num': '=ROW()',
-    'cat_id': 'CAT_1',
-    'cat_name': 'Science Fiction',
-    'description': 'Futuristic and imaginative science-based stories',
-    'book_names': 'Dune, Neuromancer, Snow Crash',
-    'status': 0
-}
+def add_category(cat_name, description, book_names):
+    cat_id = next_cat_id()
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO book_category (cat_id, cat_name, description, book_names, status)"
+                " VALUES (%s,%s,%s,%s,%s)",
+                (cat_id, cat_name, description, book_names, 0)
+            )
+    return cat_id
 
-print(add_category(category_details))
-
-update_detail = {
-    'row_num': '=ROW()',
-    'cat_id': 'CAT_1',
-    'cat_name': 'Science Fiction',
-    'description': 'Futuristic and imaginative science-based stories',
-    'book_names': 'Dune, Neuromancer, Snow Crash',
-    'status': 0
-}
-
-def update_category(row_num, details):
-    values = [[
-        details.get('row_num'),
-        details.get('cat_id'),
-        details.get('cat_name'),
-        details.get('description'),
-        details.get('book_names'),
-        details.get('status')
-    ]]
-    worksheet.update(values, f'A{row_num}:E{row_num}', value_input_option='USER_ENTERED')
-
-update_category(2, update_detail)    
+def update_category(row_num, *, cat_name=None, description=None, book_names=None):
+    fields, vals = [], []
+    for col, v in (('cat_name', cat_name), ('description', description),
+                   ('book_names', book_names)):
+        if v is not None:
+            fields.append(f'`{col}`=%s')
+            vals.append(v)
+    if not fields:
+        return row_num
+    vals.append(row_num)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"UPDATE book_category SET {', '.join(fields)} WHERE row_num = %s",
+                tuple(vals)
+            )
+    return row_num
 
 def get_category_by_row_num(row_num):
-    row_values = worksheet.get(f'A{row_num}:E{row_num}')
-    print(row_values)
-
-get_category_by_row_num(2)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM book_category WHERE row_num=%s', (row_num,))
+            return cur.fetchone()
 
 def get_all_categories():
-    all_values = worksheet.get_all_values()
-    print(all_values)
-
-get_all_categories()
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM book_category WHERE status=0 ORDER BY row_num')
+            return cur.fetchall()
 
 def get_books_by_category(cat_name):
-    all_values = worksheet.get_all_values()
-    cat_id = [row[1] for row in all_values[1:] if row[2] == cat_name]
-    if cat_id:
-        books = [row[4] for row in all_values[1:] if row[2] == cat_name]
-        print(f'{cat_name}: {books}')
-        return books
-    else:
-        print(f'Category {cat_name} not found')
-        return []
-
-get_books_by_category('Science Fiction')
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT book_names FROM book_category WHERE cat_name=%s AND status=0", (cat_name,))
+            row = cur.fetchone()
+            if row:
+                books = row['book_names'].split(', ') if row['book_names'] else []
+                print(f'{cat_name}: {books}')
+                return books
+            else:
+                print(f'Category {cat_name} not found')
+                return []
 
 def delete_category(row_num):
-    delete_value = worksheet.update_acell(f'F{row_num}', 1)
-    print(delete_value)
-delete_category(2)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('UPDATE book_category SET status=1 WHERE row_num=%s', (row_num,))
+    return row_num
+
+if __name__ == '__main__':
+    print(add_category('Science Fiction', 'Futuristic and imaginative science-based stories', 'Dune, Neuromancer, Snow Crash'))
+    print(get_category_by_row_num(2))
+    print(get_all_categories())
+    print(get_books_by_category('Science Fiction'))
+    print(delete_category(2))

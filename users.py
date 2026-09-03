@@ -1,50 +1,61 @@
+import os, pymysql
 from dotenv import load_dotenv
-import random
-from mysql_client import get_worksheet
-
 load_dotenv()
 
-worksheet = get_worksheet('User Table')
+def get_connection():
+    host = os.getenv('MYSQL_HOST', 'localhost')
+    ssl = {'ssl': {}} if 'tidbcloud' in host else None
+    conn = pymysql.connect(
+        host=host,
+        port=int(os.getenv('MYSQL_PORT', '3306')),
+        user=os.getenv('MYSQL_USER', 'root'),
+        password=os.getenv('MYSQL_PASSWORD', 'root'),
+        database=os.getenv('MYSQL_DB', 'library_db'),
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor,
+        autocommit=True,
+        ssl=ssl
+    )
+    return conn
 
-# Adds a new user to the sheet with auto-generated row number and user ID
-def add_user(user_data):
-    all_values = worksheet.get_all_values()
-    next_row = len(all_values) + 1
-    # Combines auto-generated row number formula and user ID formula with the user data passed in
-    row_data = [f'=ROW()', f'="USER_"&A{next_row}-1'] + user_data
-    worksheet.update([row_data], f'A{next_row}:H{next_row}', value_input_option='USER_ENTERED')
-    print(f'User added at row {next_row}')
+def next_user_id():
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT MAX(CAST(SUBSTRING(user_id, 6) AS UNSIGNED)) AS m FROM users WHERE user_id LIKE 'USER\\_%'")
+            row = cur.fetchone()
+            n = (row['m'] or 0) + 1
+    return f'USER_{n}'
 
-# Searches for a user by their user ID and returns their row number
-def get_user_by_row(user_id):
-    all_values = worksheet.get_all_values()
-    # Loops through each row in the sheet (skipping header), keeps only rows where status column (H) equals 0 meaning active
-    active_users = [row for row in all_values[1:] if int(row[7]) == 0]
-    # enumerate gives index (i) and value (row) together, loops through active users to find matching user_id
-    for i, row in enumerate(active_users):
-        if row[1] == user_id:
-            return i + 2
-    return None
+def add_user(user_type, username, password, email, phone):
+    user_id = next_user_id()
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                'INSERT INTO users (user_id, user_type, username, password, email, phone, status) VALUES (%s, %s, %s, %s, %s, %s, %s)',
+                (user_id, user_type, username, password, email, phone, 0)
+            )
+    return user_id
 
-# Returns all active users from the sheet
+def get_user_by_id(user_id):
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM users WHERE user_id=%s AND status=0', (user_id,))
+            return cur.fetchone()
+
 def get_all_users():
-    all_values = worksheet.get_all_values()
-    # Loops through each row in the sheet (skipping header), keeps only rows where status column (H) equals 0 meaning active
-    active_users = [row for row in all_values[1:] if int(row[7]) == 0]
-    for user in active_users:
-        print(user)
-    return active_users
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM users WHERE status=0 ORDER BY row_num')
+            return cur.fetchall()
 
-# Soft deletes a user by setting status to 1 in column H
-def delete_users(row_num):
-    worksheet.update_acell(f'H{row_num}', 1)
-    print(f'User at row {row_num} deleted')
+def delete_user(row_num):
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('UPDATE users SET status=1 WHERE row_num=%s', (row_num,))
+    return row_num
 
-user1 = ['member', 'john', 'pass123', 'john@test.com', 9876543210, 0]
-user2 = ['employee', 'jane', 'pass456', 'jane@test.com', 9876543211, 0]
-
-# Calls
-add_user(user1)
-add_user(user2)
-get_all_users()
-delete_users(3)
+if __name__ == '__main__':
+    print(add_user('member', 'john', 'pass123', 'john@test.com', 9876543210))
+    print(get_user_by_id('USER_1'))
+    print(get_all_users())
+    print(delete_user(3))

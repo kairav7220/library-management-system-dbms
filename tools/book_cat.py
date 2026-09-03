@@ -1,10 +1,6 @@
 from langchain_core.tools import tool
 
-from tools.gsheets_client import get_all_records, get_worksheet, next_row
-
-SHEET = "Book Category"
-# Book Category columns:
-# row_num, cat_id, cat_name, description, book_names, status
+from tools.db import get_connection
 
 
 @tool
@@ -14,18 +10,21 @@ def add_category(details: dict) -> dict:
     details keys: cat_name, description, book_names (comma-separated list).
     ID and status are auto-generated.
     """
-    ws = get_worksheet(SHEET)
-    nrow = next_row(SHEET)
-    row_data = [
-        "=ROW()",
-        f'="CAT_"&A{nrow}-1',
-        details.get("cat_name"),
-        details.get("description"),
-        details.get("book_names"),
-        "0",
-    ]
-    ws.update([row_data], f"A{nrow}:F{nrow}", value_input_option="USER_ENTERED")
-    return get_all_records(SHEET)[-1]
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT MAX(CAST(SUBSTRING(cat_id, 5) AS UNSIGNED)) AS m FROM book_category WHERE cat_id LIKE 'CAT\\_%'"
+            )
+            n = (cur.fetchone()['m'] or 0) + 1
+            cat_id = f'CAT_{n}'
+            cur.execute(
+                'INSERT INTO book_category (cat_id, cat_name, description, book_names, status)'
+                ' VALUES (%s,%s,%s,%s,%s)',
+                (cat_id, details.get('cat_name'), details.get('description'),
+                 details.get('book_names'), 0)
+            )
+            cur.execute('SELECT * FROM book_category WHERE cat_id=%s', (cat_id,))
+            return cur.fetchone()
 
 
 @tool
@@ -34,32 +33,59 @@ def update_category(row_num: int, details: dict) -> str:
 
     details keys (any subset): cat_name, description, book_names.
     """
-    ws = get_worksheet(SHEET)
-    col_map = {"cat_name": 3, "description": 4, "book_names": 5}
+    col_map = {
+        'cat_name': 'cat_name',
+        'description': 'description',
+        'book_names': 'book_names',
+    }
+    fields, vals = [], []
     for key, col in col_map.items():
         if key in details and details[key] is not None:
-            ws.update_cell(row_num, col, details[key])
-    return f"Category at row {row_num} updated."
+            fields.append(f'`{col}`=%s')
+            vals.append(details[key])
+    if fields:
+        vals.append(row_num)
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"UPDATE book_category SET {', '.join(fields)} WHERE row_num=%s",
+                    tuple(vals)
+                )
+    return f'Category at row {row_num} updated.'
 
 
 @tool
 def get_category_by_row_num(row_num: int) -> list:
     """Get a category's row by spreadsheet row number."""
-    return get_worksheet(SHEET).get(f"A{row_num}:E{row_num}")
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM book_category WHERE row_num=%s', (row_num,))
+            row = cur.fetchone()
+    if row:
+        cols = ['row_num', 'cat_id', 'cat_name', 'description', 'book_names', 'status']
+        return [row[c] for c in cols]
+    return []
 
 
 @tool
 def get_all_categories() -> list[dict]:
     """Get all non-deleted book categories."""
-    return get_all_records(SHEET)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM book_category WHERE status=0 ORDER BY row_num')
+            return cur.fetchall()
 
 
 @tool
 def get_books_by_category(cat_name: str) -> list:
     """Get the list of book names belonging to a category by name."""
-    all_values = get_worksheet(SHEET).get_all_values()
-    books = [row[4] for row in all_values[1:] if row[2] == cat_name and row[5] != "1"]
-    return books
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT book_names FROM book_category WHERE cat_name=%s AND status=0', (cat_name,))
+            row = cur.fetchone()
+    if row and row['book_names']:
+        return row['book_names'].split(', ')
+    return []
 
 
 @tool
@@ -68,5 +94,7 @@ def delete_category(row_num: int) -> str:
 
     Call this only AFTER the user has confirmed the deletion.
     """
-    get_worksheet(SHEET).update_acell(f"F{row_num}", 1)
-    return f"Category at row {row_num} deleted."
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('UPDATE book_category SET status=1 WHERE row_num=%s', (row_num,))
+    return f'Category at row {row_num} deleted.'

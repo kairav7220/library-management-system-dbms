@@ -10,27 +10,27 @@
   <form class="edit-form" method="POST" action="{{ url_for('add_user') }}">
     <div class="form-row">
       <div class="form-group">
-        <label for="user_id"><i class="fa-solid fa-id-badge"></i> User ID</label>
-        <input id="user_id" type="text" name="user_id" required autocomplete="off">
-      </div>
-      <div class="form-group">
         <label for="user_type"><i class="fa-solid fa-user-tag"></i> User type</label>
         <input id="user_type" type="text" name="user_type" required autocomplete="off">
       </div>
-    </div>
-    <div class="form-row">
       <div class="form-group">
         <label for="username"><i class="fa-solid fa-user"></i> Username</label>
         <input id="username" type="text" name="username" required autocomplete="off">
       </div>
+    </div>
+    <div class="form-row">
       <div class="form-group">
         <label for="password"><i class="fa-solid fa-lock"></i> Password</label>
         <input id="password" type="password" name="password" required>
       </div>
+      <div class="form-group">
+        <label for="email"><i class="fa-solid fa-envelope"></i> Email</label>
+        <input id="email" type="email" name="email" required>
+      </div>
     </div>
     <div class="form-group">
-      <label for="email"><i class="fa-solid fa-envelope"></i> Email</label>
-      <input id="email" type="email" name="email" required>
+      <label for="phone"><i class="fa-solid fa-phone"></i> Phone</label>
+      <input id="phone" type="text" name="phone" autocomplete="off">
     </div>
     <div class="form-actions">
       <a href="{{ url_for('index') }}" class="btn btn-ghost">Cancel</a>

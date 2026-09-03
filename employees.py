@@ -1,98 +1,88 @@
+import os, pymysql
 from dotenv import load_dotenv
-from mysql_client import get_worksheet, rowcol_to_a1
-import random
-
 load_dotenv()
 
-worksheet = get_worksheet('Employee Table')
+def get_connection():
+    host = os.getenv('MYSQL_HOST', 'localhost')
+    ssl = {'ssl': {}} if 'tidbcloud' in host else None
+    conn = pymysql.connect(
+        host=host,
+        port=int(os.getenv('MYSQL_PORT', '3306')),
+        user=os.getenv('MYSQL_USER', 'root'),
+        password=os.getenv('MYSQL_PASSWORD', 'root'),
+        database=os.getenv('MYSQL_DB', 'library_db'),
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor,
+        autocommit=True,
+        ssl=ssl
+    )
+    return conn
 
-def add_employee(details):
-    values = [
-        details.get('row_num'),
-        details.get('emp_id'),
-        details.get('name'),
-        details.get('user_id'),
-        details.get('password'),
-        details.get('email'),
-        details.get('phone'),
-        details.get('designation'),
-        details.get('salary'),
-        details.get('user_row_num'),
-        details.get('permanent_address'),
-        details.get('temporary_address'),
-        details.get('status')
-    ]
-    print(f'details: {values}')
+def next_emp_id():
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT MAX(CAST(SUBSTRING(emp_id, 5) AS UNSIGNED)) AS m FROM employees WHERE emp_id LIKE 'EMP\\_%'")
+            n = (cur.fetchone()['m'] or 0) + 1
+    return f'EMP_{n}'
 
-    worksheet.append_row(values, value_input_option='USER_ENTERED')
+def add_employee(name, user_id, password, email, phone, designation,
+                 salary, user_row_num, permanent_address, temporary_address):
+    emp_id = next_emp_id()
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO employees (emp_id, name, user_id, password, email, phone,"
+                " designation, salary, user_row_num, permanent_address, temporary_address, status)"
+                " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (emp_id, name, user_id, password, email, phone, designation,
+                 salary, user_row_num, permanent_address, temporary_address, 0)
+            )
+    return emp_id
 
-# detail storing a value in a member
-member_detail = {
-    'row_num': '=ROW()',
-    'emp_id': 'EMP_1',
-    'name': 'raju',
-    'user_id': 'USER_6',
-    'password': 'emp123',
-    'email': 'emp@test.com',
-    'designation': 'librarian',
-    'phone': 9876543210,
-    'salary': 10000,
-    'user_row_num': 2,
-    'permanent_address': 'werw',
-    'temporary_address': 'rtw',
-    'status': 0
-}
-
-member = add_employee(member_detail)
-print(member)
-
-update_detail = {
-    'row_num': '=ROW()',
-    'emp_id': 'EMP_1',
-    'name': 'rajesh',
-    'user_id': 'USER_6',
-    'password': 'emp21312',
-    'email': 'emp@library.com',
-    'designation': 'librarian',
-    'phone': 9876543210,
-    'salary': 10000,
-    'user_row_num': 2,
-    'permanent_address': 'sdfs',
-    'temporary_address': 'sdsd'
-}
-
-def update_employee(row_num, details):
-    values = [[
-        details.get('row_num'),
-        details.get('emp_id'),
-        details.get('name'),
-        details.get('user_id'),
-        details.get('password'),
-        details.get('email'),
-        details.get('phone'),
-        details.get('designation'),
-        details.get('salary'),
-        details.get('user_row_num'),
-        details.get('permanent_address'),
-        details.get('temporary_address')
-    ]]
-    worksheet.update(values, 'A2:M2', value_input_option='USER_ENTERED')
-
-update_employee(2, update_detail)
+def update_employee(row_num, *, name=None, user_id=None, password=None, email=None,
+                    phone=None, designation=None, salary=None, user_row_num=None,
+                    permanent_address=None, temporary_address=None):
+    fields, vals = [], []
+    for col, v in (('name', name), ('user_id', user_id), ('password', password),
+                   ('email', email), ('phone', phone), ('designation', designation),
+                   ('salary', salary), ('user_row_num', user_row_num),
+                   ('permanent_address', permanent_address),
+                   ('temporary_address', temporary_address)):
+        if v is not None:
+            fields.append(f'`{col}`=%s')
+            vals.append(v)
+    if not fields:
+        return row_num
+    vals.append(row_num)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"UPDATE employees SET {', '.join(fields)} WHERE row_num = %s",
+                tuple(vals)
+            )
+    return row_num
 
 def get_employee_by_row_num(row_num):
-    row_values = worksheet.get(f'A{row_num}:M{row_num}')
-    print(row_values)
-
-get_employee_by_row_num(3)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM employees WHERE row_num=%s', (row_num,))
+            return cur.fetchone()
 
 def get_all_employees():
-    all_values = worksheet.get_all_values()
-    print(all_values)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM employees WHERE status=0 ORDER BY row_num')
+            return cur.fetchall()
 
-get_all_employees()
+def delete_employee(row_num):
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('UPDATE employees SET status=1 WHERE row_num=%s', (row_num,))
+    return row_num
 
-def delete_members(row_num):
-    delete_value = worksheet.update_acell(f'M{row_num}', 1)
-    print(delete_value)
-delete_members(2)
+if __name__ == '__main__':
+    print(add_employee('raju', 'USER_6', 'emp123', 'emp@test.com', 9876543210,
+                       'librarian', 10000, 2, 'werw', 'rtw'))
+    print(get_employee_by_row_num(2))
+    print(get_all_employees())
+    print(delete_employee(2))

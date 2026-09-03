@@ -1,15 +1,15 @@
-"""Load documents from Google Sheets (books) for indexing."""
+"""Load books from the MySQL database for indexing."""
 
 from langchain_core.documents import Document
 
 from rag.config import BOOK_TEXT_TEMPLATE
-from tools.gsheets_client import get_all_records
+from tools.book import get_all_books
 
 
 def load_books() -> list[Document]:
     """Load every non-deleted book as a Document."""
     docs = []
-    for b in get_all_records("Book Table"):
+    for b in get_all_books.invoke({}):
         text = BOOK_TEXT_TEMPLATE.format(
             name=b.get("book_name") or "",
             author=b.get("book_author") or "",
@@ -28,7 +28,7 @@ def load_books() -> list[Document]:
                     "author": b.get("book_author") or "",
                     "category": b.get("book_cat") or "",
                     "genre": b.get("book_genre") or "",
-                    "sheet_row": b.get("_sheet_row"),
+                    "row_num": b.get("row_num"),
                 },
             )
         )

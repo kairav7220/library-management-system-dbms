@@ -10,8 +10,13 @@
   <form class="edit-form" method="POST" action="{{ url_for('add_subscription') }}">
     <div class="form-row">
       <div class="form-group">
-        <label for="mem_id"><i class="fa-solid fa-user"></i> Member ID</label>
-        <input id="mem_id" type="text" name="mem_id" required autocomplete="off">
+        <label for="mem_id"><i class="fa-solid fa-user"></i> Member</label>
+        <select id="mem_id" name="mem_id" required>
+          <option value="">Select member…</option>
+          {% for m in members %}
+            <option value="{{ m.id }}">{{ m.label }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div class="form-group">
         <label for="plan_mode"><i class="fa-solid fa-clock"></i> Plan mode</label>

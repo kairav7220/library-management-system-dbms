@@ -1,93 +1,87 @@
+import os, pymysql
 from dotenv import load_dotenv
-import random
-from mysql_client import get_worksheet
-
 load_dotenv()
 
-worksheet = get_worksheet('Member Table')
+def get_connection():
+    host = os.getenv('MYSQL_HOST', 'localhost')
+    ssl = {'ssl': {}} if 'tidbcloud' in host else None
+    conn = pymysql.connect(
+        host=host,
+        port=int(os.getenv('MYSQL_PORT', '3306')),
+        user=os.getenv('MYSQL_USER', 'root'),
+        password=os.getenv('MYSQL_PASSWORD', 'root'),
+        database=os.getenv('MYSQL_DB', 'library_db'),
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor,
+        autocommit=True,
+        ssl=ssl
+    )
+    return conn
 
-def add_member(details):
-    row_num = f'=ROW()'
-    mem_id = f'USER_1'
-    # get all columns from member details
-    values = [
-        row_num,
-        mem_id,
-        details.get('name'),
-        details.get('user_id'),
-        details.get('password'),
-        details.get('email'),
-        details.get('phone'),
-        details.get('user_row_num'),
-        details.get('permanent_address'),
-        details.get('temporary_address'),
-        details.get('status')
-    ]
-    print(f'details: {values}')
+def next_mem_id():
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT MAX(CAST(SUBSTRING(mem_id, 5) AS UNSIGNED)) AS m FROM members WHERE mem_id LIKE 'MEM\\_%'")
+            n = (cur.fetchone()['m'] or 0) + 1
+    return f'MEM_{n}'
 
-    worksheet.append_row(values, value_input_option='USER_ENTERED')
+def add_member(name, user_id, password, email, phone, user_row_num,
+               permanent_address, temporary_address):
+    mem_id = next_mem_id()
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO members (mem_id, name, user_id, password, email, phone,"
+                " user_row_num, permanent_address, temporary_address, status)"
+                " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (mem_id, name, user_id, password, email, phone, user_row_num,
+                 permanent_address, temporary_address, 0)
+            )
+    return mem_id
 
-# detail storing a value in a member
-member_detail = {
-    'name': 'ajay',
-    'user_id': 'USER_1',
-    'password': 'user123',
-    'email': 'user@test.com',
-    'phone': 9876543210,
-    'user_row_num': 2,
-    'permanent_address': 'abc',
-    'temporary_address': 'abcd',
-    'status': 0
-}
+def update_member(row_num, *, name=None, user_id=None, password=None, email=None,
+                  phone=None, user_row_num=None, permanent_address=None,
+                  temporary_address=None):
+    fields, vals = [], []
+    for col, v in (('name', name), ('user_id', user_id), ('password', password),
+                   ('email', email), ('phone', phone), ('user_row_num', user_row_num),
+                   ('permanent_address', permanent_address),
+                   ('temporary_address', temporary_address)):
+        if v is not None:
+            fields.append(f'`{col}`=%s')
+            vals.append(v)
+    if not fields:
+        return row_num
+    vals.append(row_num)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"UPDATE members SET {', '.join(fields)} WHERE row_num = %s",
+                tuple(vals)
+            )
+    return row_num
 
-# calling function with member detail
-member = add_member(member_detail)
-print(member)
-
-update_detail = {
-    'row_num': '=ROW()',
-    'mem_id': 'MEM_1',
-    'name': 'raju',
-    'user_id': 'USER_1',
-    'password': 'user16658',
-    'email': 'user@test.com',
-    'phone': 1234567890,
-    'user_row_num': 2,
-    'permanent_address': 'abc',
-    'temporary_address': 'dffh',
-    'status': 0
-}
-
-def update_member(row_num, details):
-    values = [[
-        details.get('row_num'),
-        details.get('mem_id'),
-        details.get('name'),
-        details.get('user_id'),
-        details.get('password'),
-        details.get('email'),
-        details.get('phone'),
-        details.get('user_row_num'),
-        details.get('permanent_address'),
-        details.get('temporary_address')
-    ]]
-    worksheet.update(values, 'A3:J3', value_input_option='USER_ENTERED')
-
-update_member(3, update_detail)
-
-def get_members_by_row_num(row_num):
-    row_values = worksheet.get(f'A{row_num}:J{row_num}')
-    print(row_values)
-
-get_members_by_row_num(2)
+def get_member_by_row_num(row_num):
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM members WHERE row_num=%s', (row_num,))
+            return cur.fetchone()
 
 def get_all_members():
-    all_values = worksheet.get_all_values()
-    print(all_values)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM members WHERE status=0 ORDER BY row_num')
+            return cur.fetchall()
 
-get_all_members()
+def delete_member(row_num):
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('UPDATE members SET status=1 WHERE row_num=%s', (row_num,))
+    return row_num
 
-def delete_members(row_num):
-    delete_value = worksheet.update_acell(f'K{row_num}', 1)
-    print(delete_value)
-delete_members(4)
+if __name__ == '__main__':
+    print(add_member('ajay', 'USER_1', 'user123', 'user@test.com', 9876543210,
+                     2, 'abc', 'abcd'))
+    print(get_member_by_row_num(2))
+    print(get_all_members())
+    print(delete_member(2))

@@ -1,11 +1,6 @@
 from langchain_core.tools import tool
 
-from tools.gsheets_client import get_all_records, get_worksheet, next_row
-
-SHEET = "Employee Table"
-# Employee Table columns:
-# row_num, emp_id, name, user_id, password, email, phone, designation,
-# salary, user_row_num, permanent_address, temporary_address, status
+from tools.db import get_connection
 
 
 @tool
@@ -16,25 +11,26 @@ def add_employee(details: dict) -> dict:
     salary, user_row_num, permanent_address, temporary_address.
     emp_id and status auto-generated.
     """
-    ws = get_worksheet(SHEET)
-    nrow = next_row(SHEET)
-    row_data = [
-        "=ROW()",
-        f'="EMP_"&A{nrow}-1',
-        details.get("name"),
-        details.get("user_id"),
-        details.get("password"),
-        details.get("email"),
-        details.get("phone"),
-        details.get("designation"),
-        details.get("salary"),
-        details.get("user_row_num", ""),
-        details.get("permanent_address"),
-        details.get("temporary_address"),
-        "0",
-    ]
-    ws.update([row_data], f"A{nrow}:M{nrow}", value_input_option="USER_ENTERED")
-    return get_all_records(SHEET)[-1]
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT MAX(CAST(SUBSTRING(emp_id, 5) AS UNSIGNED)) AS m FROM employees WHERE emp_id LIKE 'EMP\\_%'"
+            )
+            n = (cur.fetchone()['m'] or 0) + 1
+            emp_id = f'EMP_{n}'
+            cur.execute(
+                "INSERT INTO employees (emp_id, name, user_id, password, email, phone,"
+                " designation, salary, user_row_num, permanent_address, temporary_address, status)"
+                " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (emp_id, details.get("name"), details.get("user_id"),
+                 details.get("password"), details.get("email"),
+                 details.get("phone"), details.get("designation"),
+                 details.get("salary"), details.get("user_row_num", ""),
+                 details.get("permanent_address"),
+                 details.get("temporary_address"), 0)
+            )
+            cur.execute('SELECT * FROM employees WHERE emp_id=%s', (emp_id,))
+            return cur.fetchone()
 
 
 @tool
@@ -44,43 +40,64 @@ def update_employee(row_num: int, details: dict) -> str:
     details keys (any subset): name, user_id, password, email, phone,
     designation, salary, permanent_address, temporary_address.
     """
-    ws = get_worksheet(SHEET)
     col_map = {
-        "name": 3,
-        "user_id": 4,
-        "password": 5,
-        "email": 6,
-        "phone": 7,
-        "designation": 8,
-        "salary": 9,
-        "permanent_address": 11,
-        "temporary_address": 12,
+        "name": "name",
+        "user_id": "user_id",
+        "password": "password",
+        "email": "email",
+        "phone": "phone",
+        "designation": "designation",
+        "salary": "salary",
+        "permanent_address": "permanent_address",
+        "temporary_address": "temporary_address",
     }
+    fields, vals = [], []
     for key, col in col_map.items():
         if key in details and details[key] is not None:
-            ws.update_cell(row_num, col, details[key])
+            fields.append(f'`{col}`=%s')
+            vals.append(details[key])
+    if fields:
+        vals.append(row_num)
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"UPDATE employees SET {', '.join(fields)} WHERE row_num=%s",
+                    tuple(vals)
+                )
     return f"Employee at row {row_num} updated."
 
 
 @tool
 def get_employee_by_row_num(row_num: int) -> list:
     """Get an employee's row by spreadsheet row number."""
-    return get_worksheet(SHEET).get(f"A{row_num}:M{row_num}")
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM employees WHERE row_num=%s', (row_num,))
+            row = cur.fetchone()
+    if row:
+        cols = ['row_num', 'emp_id', 'name', 'user_id', 'password', 'email',
+                'phone', 'designation', 'salary', 'user_row_num',
+                'permanent_address', 'temporary_address', 'status']
+        return [row[c] for c in cols]
+    return []
 
 
 @tool
 def get_employee_by_id(emp_id: str) -> dict | None:
     """Find an employee by their emp_id (e.g. EMP_1). Returns the employee."""
-    for row in get_all_records(SHEET):
-        if row.get("emp_id") == emp_id:
-            return row
-    return None
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM employees WHERE emp_id=%s AND status=0', (emp_id,))
+            return cur.fetchone()
 
 
 @tool
 def get_all_employees() -> list[dict]:
     """Get all non-deleted employees."""
-    return get_all_records(SHEET)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM employees WHERE status=0 ORDER BY row_num')
+            return cur.fetchall()
 
 
 @tool
@@ -89,5 +106,7 @@ def delete_employee(row_num: int) -> str:
 
     Call this only AFTER the user has confirmed the deletion.
     """
-    get_worksheet(SHEET).update_acell(f"M{row_num}", 1)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('UPDATE employees SET status=1 WHERE row_num=%s', (row_num,))
     return f"Employee at row {row_num} deleted."

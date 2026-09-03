@@ -1,10 +1,6 @@
 from langchain_core.tools import tool
 
-from tools.gsheets_client import get_all_records, get_worksheet, next_row
-
-SHEET = "Book Genre"
-# Book Genre columns:
-# row_num, genre_id, genre_title, book_names, status
+from tools.db import get_connection
 
 
 @tool
@@ -14,17 +10,20 @@ def add_book_genre(details: dict) -> dict:
     details keys: genre_title, book_names (comma-separated list).
     ID and status are auto-generated.
     """
-    ws = get_worksheet(SHEET)
-    nrow = next_row(SHEET)
-    row_data = [
-        "=ROW()",
-        f'="GENRE_"&A{nrow}-1',
-        details.get("genre_title"),
-        details.get("book_names"),
-        "0",
-    ]
-    ws.update([row_data], f"A{nrow}:E{nrow}", value_input_option="USER_ENTERED")
-    return get_all_records(SHEET)[-1]
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT MAX(CAST(SUBSTRING(genre_id, 7) AS UNSIGNED)) AS m FROM book_genre WHERE genre_id LIKE 'GENRE\\_%'"
+            )
+            n = (cur.fetchone()['m'] or 0) + 1
+            genre_id = f'GENRE_{n}'
+            cur.execute(
+                "INSERT INTO book_genre (genre_id, genre_title, book_names, status)"
+                " VALUES (%s,%s,%s,%s)",
+                (genre_id, details.get("genre_title"), details.get("book_names"), 0)
+            )
+            cur.execute('SELECT * FROM book_genre WHERE genre_id=%s', (genre_id,))
+            return cur.fetchone()
 
 
 @tool
@@ -33,24 +32,46 @@ def update_book_genre(row_num: int, details: dict) -> str:
 
     details keys (any subset): genre_title, book_names.
     """
-    ws = get_worksheet(SHEET)
-    col_map = {"genre_title": 3, "book_names": 4}
+    col_map = {
+        "genre_title": "genre_title",
+        "book_names": "book_names",
+    }
+    fields, vals = [], []
     for key, col in col_map.items():
         if key in details and details[key] is not None:
-            ws.update_cell(row_num, col, details[key])
+            fields.append(f'`{col}`=%s')
+            vals.append(details[key])
+    if fields:
+        vals.append(row_num)
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"UPDATE book_genre SET {', '.join(fields)} WHERE row_num=%s",
+                    tuple(vals)
+                )
     return f"Genre at row {row_num} updated."
 
 
 @tool
 def get_book_genre_by_row_num(row_num: int) -> list:
     """Get a genre's row by spreadsheet row number."""
-    return get_worksheet(SHEET).get(f"A{row_num}:E{row_num}")
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM book_genre WHERE row_num=%s', (row_num,))
+            row = cur.fetchone()
+    if row:
+        cols = ['row_num', 'genre_id', 'genre_title', 'book_names', 'status']
+        return [row[c] for c in cols]
+    return []
 
 
 @tool
 def get_all_book_genres() -> list[dict]:
     """Get all non-deleted book genres."""
-    return get_all_records(SHEET)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM book_genre WHERE status=0 ORDER BY row_num')
+            return cur.fetchall()
 
 
 @tool
@@ -59,5 +80,7 @@ def delete_book_genre(row_num: int) -> str:
 
     Call this only AFTER the user has confirmed the deletion.
     """
-    get_worksheet(SHEET).update_acell(f"E{row_num}", 1)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('UPDATE book_genre SET status=1 WHERE row_num=%s', (row_num,))
     return f"Genre at row {row_num} deleted."

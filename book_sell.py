@@ -1,57 +1,76 @@
-from dotenv import load_dotenv
+import os, pymysql
 from datetime import datetime
-from mysql_client import get_worksheet
-
+from dotenv import load_dotenv
 load_dotenv()
 
-worksheet = get_worksheet('Book Sell')
+def get_connection():
+    host = os.getenv('MYSQL_HOST', 'localhost')
+    ssl = {'ssl': {}} if 'tidbcloud' in host else None
+    conn = pymysql.connect(
+        host=host,
+        port=int(os.getenv('MYSQL_PORT', '3306')),
+        user=os.getenv('MYSQL_USER', 'root'),
+        password=os.getenv('MYSQL_PASSWORD', 'root'),
+        database=os.getenv('MYSQL_DB', 'library_db'),
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor,
+        autocommit=True,
+        ssl=ssl
+    )
+    return conn
 
-def book_order(details):
-    row_num = f'=ROW()'
+def next_order_id():
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT MAX(CAST(SUBSTRING(order_id, 7) AS UNSIGNED)) AS m FROM book_sell WHERE order_id LIKE 'ORDER\\_%'")
+            n = (cur.fetchone()['m'] or 0) + 1
+    return f'ORDER_{n}'
+
+def book_order(order_date, book_id, book_name, book_price, mem_id):
+    order_id = next_order_id()
     timestamp = datetime.now().strftime('%d-%m-%Y %I:%M:%S %p')
-    order_id = f'ORDER_1'
-    values = [
-        row_num,
-        order_id,
-        details.get('order_date'),
-        timestamp,
-        details.get('book_id'),
-        details.get('book_name'),
-        details.get('book_price'),
-        details.get('mem_id'),
-    ]
-    worksheet.append_row(values, value_input_option='USER_ENTERED')
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO book_sell (order_id, order_date, timestamp, book_id, book_name, book_price, mem_id)"
+                " VALUES (%s,%s,%s,%s,%s,%s,%s)",
+                (order_id, order_date, timestamp, book_id, book_name, book_price, mem_id)
+            )
+    return order_id
 
-order_details = {
-    'order_date': '25-Jan-2026',
-    'book_id': 'BOOK_1',
-    'book_name': 'Duke',
-    'book_price': 200,
-    'mem_id': 'MEM_1'
-}
+def update_order(row_num, *, order_date=None, timestamp=None, book_id=None,
+                 book_name=None, book_price=None, mem_id=None):
+    fields, vals = [], []
+    for col, v in (('order_date', order_date), ('timestamp', timestamp),
+                   ('book_id', book_id), ('book_name', book_name),
+                   ('book_price', book_price), ('mem_id', mem_id)):
+        if v is not None:
+            fields.append(f'`{col}`=%s')
+            vals.append(v)
+    if not fields:
+        return row_num
+    vals.append(row_num)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"UPDATE book_sell SET {', '.join(fields)} WHERE row_num = %s",
+                tuple(vals)
+            )
+    return row_num
 
-print(book_order(order_details))
+def get_order_by_row_num(row_num):
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM book_sell WHERE row_num=%s', (row_num,))
+            return cur.fetchone()
 
-update_detail = {
-    'order_date': '25-Jan-2026',
-    'timestamp': datetime.now().strftime('%d-%m-%Y %I:%M:%S %p'),
-    'book_id': 'BOOK_2',
-    'book_name': 'Neuromancer',
-    'book_price': 210,
-    'mem_id': 'MEM_2'
-}
+def get_all_orders():
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM book_sell ORDER BY row_num')
+            return cur.fetchall()
 
-def order_book(row_num, details):
-    issue_details = worksheet
-    values = [[
-        details.get('row_num'),
-        details.get('order_id'),
-        details.get('order_date'),
-        details.get('timestamp'),
-        details.get('book_id'),
-        details.get('book_name'),
-        details.get('book_price'),
-        details.get('mem_id'),
-    ]]
-    worksheet.update(values, f'A{row_num}:H{row_num}', value_input_option='USER_ENTERED')
-order_book(2, update_detail)
+if __name__ == '__main__':
+    print(book_order('25-Jan-2026', 'BOOK_1', 'Duke', 200, 'MEM_1'))
+    print(get_order_by_row_num(2))
+    print(get_all_orders())

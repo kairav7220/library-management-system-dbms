@@ -144,7 +144,7 @@ Open `http://localhost:5000`, log in, and use the admin pages or the **Lumina Co
 | `DATABASE_URL` | ⚠️ | Postgres for RAG + chat sessions (falls back to SQLite) |
 | `LANGSMITH_*` | optional | LangSmith tracing (`TRACING`, `ENDPOINT`, `API_KEY`, `PROJECT`) |
 
-> **Note:** `mysql_client.py` automatically enables TLS when `MYSQL_HOST` contains `tidbcloud.com` (TiDB requires `--ssl-mode=REQUIRED`). Local MySQL hosts connect without TLS.
+> **Note:** `tools/db.py` (shared by `flask_app.py` and the agent tools) automatically enables TLS when `MYSQL_HOST` contains `tidbcloud.com` (TiDB requires `--ssl-mode=REQUIRED`). Local MySQL hosts connect without TLS.
 
 To build the vector index once RAG is configured:
 
@@ -204,7 +204,6 @@ library-management-system-dbms/
 ├── flask_app.py                # Flask entry — auth, CRUD routes + chat/SSE
 ├── schema.sql                  # MySQL schema + seed data (12 tables)
 ├── queries.sql                 # Sample SQL queries (JOINs, aggregates)
-├── mysql_client.py             # PyMySQL data layer (gspread-compatible shim)
 ├── requirements.txt            # Python dependencies
 ├── .env.example                # Environment variable template
 ├── agents/
