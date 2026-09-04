@@ -258,11 +258,11 @@ CREATE TABLE IF NOT EXISTS book_sell (
 ) AUTO_ID_CACHE = 1;
 
 INSERT INTO book_sell (order_id, order_date, timestamp, book_id, book_name, book_price, mem_id) VALUES
-('ORDER_1','2026-01-10','2026-01-10 10:00:00','BOOK_8','The Alchemist',280,'MEM_1'),
-('ORDER_2','2026-02-14','2026-02-14 12:30:00','BOOK_9','Atomic Habits',550,'MEM_2'),
-('ORDER_3','2026-03-20','2026-03-20 14:00:00','BOOK_11','Think and Grow Rich',350,'MEM_3'),
-('ORDER_4','2026-04-25','2026-04-25 11:15:00','BOOK_17','The God of Small Things',350,'MEM_4'),
-('ORDER_5','2026-05-18','2026-05-18 16:45:00','BOOK_20','The Immortals of Meluha',399,'MEM_1');
+('ORDER_1','2026-01-10','2026-01-10 10:00:00','BOOK_8','Atomic Habits',550,'MEM_1'),
+('ORDER_2','2026-02-14','2026-02-14 12:30:00','BOOK_9','Rich Dad Poor Dad',400,'MEM_2'),
+('ORDER_3','2026-03-20','2026-03-20 14:00:00','BOOK_11','The Psychology of Money',499,'MEM_3'),
+('ORDER_4','2026-04-25','2026-04-25 11:15:00','BOOK_17','Midnight Children',420,'MEM_4'),
+('ORDER_5','2026-05-18','2026-05-18 16:45:00','BOOK_20','Life of Pi',370,'MEM_1');
 
 -- ============================================================
 -- 11. LOGS (login/logout audit)
