@@ -311,7 +311,7 @@ def update_user(row_num):
     user_row = _to_list(row, USER_COLS) if row else []
     return render_template('form.html', user=user_row, row_num=row_num)
 
-@app.route('/users/delete/<int:row_num>')
+@app.route('/users/delete/<int:row_num>', methods=['POST'])
 def delete_user(row_num):
     try:
         with get_connection() as conn:
@@ -388,7 +388,7 @@ def edit_book(row_num):
     book_row = _to_list(row, BOOK_COLS) if row else []
     return render_template('edit_book.html', book=book_row, row_num=row_num)
 
-@app.route('/books/delete/<int:row_num>')
+@app.route('/books/delete/<int:row_num>', methods=['POST'])
 def delete_book(row_num):
     try:
         with get_connection() as conn:
@@ -454,7 +454,7 @@ def edit_book_category(row_num):
     book_cat_row = _to_list(row, CAT_COLS) if row else []
     return render_template('edit_book_category.html', book_cat=book_cat_row, row_num=row_num)
 
-@app.route('/book_cat/delete/<int:row_num>')
+@app.route('/book_cat/delete/<int:row_num>', methods=['POST'])
 def delete_book_category(row_num):
     try:
         with get_connection() as conn:
@@ -518,7 +518,7 @@ def edit_book_genre(row_num):
     genre_row = _to_list(row, GENRE_COLS) if row else []
     return render_template('edit_book_genre.html', genre=genre_row, row_num=row_num)
 
-@app.route('/book_genre/delete/<int:row_num>')
+@app.route('/book_genre/delete/<int:row_num>', methods=['POST'])
 def delete_book_genre(row_num):
     try:
         with get_connection() as conn:
@@ -607,7 +607,7 @@ def edit_member(row_num):
     member_row = _to_list(row, MEMBER_COLS) if row else []
     return render_template('edit_member.html', member=member_row, row_num=row_num)
 
-@app.route('/members/delete/<int:row_num>')
+@app.route('/members/delete/<int:row_num>', methods=['POST'])
 def delete_member(row_num):
     try:
         with get_connection() as conn:
@@ -705,7 +705,7 @@ def edit_employee(row_num):
     emp_row = _to_list(row, EMPLOYEE_COLS) if row else []
     return render_template('edit_employee.html', employee=emp_row, row_num=row_num)
 
-@app.route('/employees/delete/<int:row_num>')
+@app.route('/employees/delete/<int:row_num>', methods=['POST'])
 def delete_employee(row_num):
     try:
         with get_connection() as conn:
@@ -789,7 +789,7 @@ def edit_subscription(row_num):
     return render_template('edit_subscription.html', subscription=sub_row, row_num=row_num,
                            members=members_dd)
 
-@app.route('/subscriptions/delete/<int:row_num>')
+@app.route('/subscriptions/delete/<int:row_num>', methods=['POST'])
 def delete_subscription(row_num):
     try:
         with get_connection() as conn:

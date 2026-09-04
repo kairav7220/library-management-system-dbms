@@ -264,6 +264,7 @@ tbody tr:hover { background: var(--surface-soft); }
 .btn-icon:hover { background: var(--field); color: var(--ink); }
 .btn-icon.delete-btn { color: var(--accent); background: var(--accent-soft); }
 .btn-icon.delete-btn:hover { background: var(--accent); color: var(--canvas); }
+button.btn-icon { cursor: pointer; font: inherit; }
 .row-actions { display: inline-flex; align-items: center; gap: 8px; }
 
 /* ─── Summary / Profile Card ─────────────────────────────────── */

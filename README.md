@@ -167,7 +167,8 @@ python -m rag.embedder    # embeds books into pgvector book_embeddings
 | `DELETE` | `/chat/sessions/<id>` | Delete a session |
 | `GET` | `/books`, `/members`, `/employees`, … | CRUD list pages (Jinja2) |
 | `POST` | `/books/add`, `/members/add`, … | CRUD create |
-| `GET` | `/books/edit/<row>`, `/books/delete/<row>`, … | CRUD update/delete |
+| `GET`/`POST` | `/books/edit/<row>`, … | CRUD update |
+| `POST` | `/books/delete/<row>`, … | CRUD delete (CSRF-protected) |
 
 ## Database
 
