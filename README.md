@@ -41,7 +41,8 @@ This is the **DBMS rewrite** of the original [Google-Sheets-based app](https://g
 ## Features
 
 - **📚 Database-Backed CRUD** — 12 normalized tables (users, books, categories, genres, members, employees, subscriptions, payments, sales, issues, logs, customers)
-- **🔐 Login & Role Gate** — Session-based auth; admin-only access to the audit `/logs` page; login/logout written to the DB
+- **🔐 Login & Role Gate** — Session-based auth with scrypt-hashed passwords (salted per user, verified via `check_password_hash`); admin-only access to the audit `/logs` page; login/logout written to the DB
+- **🛡️ CSRF Protection** — Every form carries a per-session CSRF token (Flask-WTF); tokenless POSTs are rejected with 400
 - **🧑‍💼 Multi-Agent AI Concierge** — Five specialized LangGraph agents (Catalog, Circulation, Membership, Reference, Director) routed by an intent classifier
 - **⚡ Token-Level Streaming** — Agent replies stream live via Server-Sent Events (SSE) with a typing indicator
 - **📄 Audit Logging** — Every login/logout recorded in the `logs` table
