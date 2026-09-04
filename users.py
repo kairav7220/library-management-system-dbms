@@ -1,5 +1,6 @@
 import os, pymysql
 from dotenv import load_dotenv
+from werkzeug.security import generate_password_hash
 load_dotenv()
 
 def get_connection():
@@ -28,11 +29,12 @@ def next_user_id():
 
 def add_user(user_type, username, password, email, phone):
     user_id = next_user_id()
+    password_hash = generate_password_hash(password) if password else None
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 'INSERT INTO users (user_id, user_type, username, password, email, phone, status) VALUES (%s, %s, %s, %s, %s, %s, %s)',
-                (user_id, user_type, username, password, email, phone, 0)
+                (user_id, user_type, username, password_hash, email, phone, 0)
             )
     return user_id
 

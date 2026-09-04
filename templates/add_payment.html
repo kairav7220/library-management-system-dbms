@@ -8,6 +8,7 @@
     <a href="{{ url_for('payments') }}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back</a>
   </div>
   <form class="edit-form" method="POST" action="{{ url_for('add_payment') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <div class="form-row">
       <div class="form-group">
         <label for="payment_amount"><i class="fa-solid fa-dollar-sign"></i> Amount</label>

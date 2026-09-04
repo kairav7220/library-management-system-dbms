@@ -1,6 +1,7 @@
 import os, pymysql
 from datetime import datetime
 from dotenv import load_dotenv
+from werkzeug.security import check_password_hash
 load_dotenv()
 
 def get_connection():
@@ -22,9 +23,9 @@ def get_connection():
 def login(username, password):
     with get_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute('SELECT * FROM users WHERE username=%s AND password=%s AND status=0', (username, password))
+            cur.execute('SELECT * FROM users WHERE username=%s AND status=0', (username,))
             user = cur.fetchone()
-    if user:
+    if user and check_password_hash(user['password'], password):
         print('Successful Login!')
         log_action(f'{username} has logged in')
         return True

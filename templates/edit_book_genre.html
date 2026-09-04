@@ -8,6 +8,7 @@
     <a href="{{ url_for('book_genre') }}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back</a>
   </div>
   <form class="edit-form" method="POST" action="{{ url_for('edit_book_genre', row_num=row_num) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <div class="form-group">
       <label for="book_genre"><i class="fa-solid fa-masks-theater"></i> Genre name</label>
       <input id="book_genre" type="text" name="book_genre" value="{{ genre[0] }}" required>

@@ -1,4 +1,6 @@
 from flask import Flask, jsonify, render_template, request, redirect, url_for, Response, session, flash, abort
+from flask_wtf.csrf import CSRFProtect
+from werkzeug.security import generate_password_hash, check_password_hash
 import json
 from datetime import datetime
 from dotenv import load_dotenv
@@ -82,6 +84,7 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-me')
+csrf = CSRFProtect(app)
 
 
 # Column order (matches the original sheet layout / templates).
@@ -191,11 +194,11 @@ def login():
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    'SELECT * FROM users WHERE username=%s AND password=%s',
-                    (username, password),
+                    'SELECT * FROM users WHERE username=%s',
+                    (username,),
                 )
                 user = cur.fetchone()
-        if user:
+        if user and check_password_hash(user['password'], password):
             session['username'] = user['username']
             session['user_type'] = user.get('user_type') or ''
             session['user_id'] = user.get('user_id') or ''
@@ -264,12 +267,13 @@ def add_user():
             return render_template('add_user.html')
         try:
             user_id = _next_id('users', 'user_id', 'USER')
+            password_hash = generate_password_hash(password)
             with get_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         'INSERT INTO users (user_id, user_type, username, password, email, phone, status)'
                         ' VALUES (%s,%s,%s,%s,%s,%s,0)',
-                        (user_id, user_type, username, password, email, phone),
+                        (user_id, user_type, username, password_hash, email, phone),
                     )
             flash('User added.', 'success')
             return redirect(url_for('index'))
@@ -285,10 +289,16 @@ def update_user(row_num):
         try:
             with get_connection() as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        'UPDATE users SET password=%s, phone=%s WHERE row_num=%s',
-                        (password, phone, row_num),
-                    )
+                    if password:
+                        cur.execute(
+                            'UPDATE users SET password=%s, phone=%s WHERE row_num=%s',
+                            (generate_password_hash(password), phone, row_num),
+                        )
+                    else:
+                        cur.execute(
+                            'UPDATE users SET phone=%s WHERE row_num=%s',
+                            (phone, row_num),
+                        )
             flash('User updated.', 'success')
             return redirect(url_for('index'))
         except Exception as exc:
@@ -544,12 +554,13 @@ def add_member():
             flash(f'Could not add member: {err}', 'error')
             return render_template('add_member.html')
         try:
+            password_hash = generate_password_hash(password) if password else None
             with get_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         'INSERT INTO members (mem_id, name, user_id, password, email, phone, user_row_num,'
                         ' permanent_address, temporary_address, status) VALUES (%s,%s,NULL,%s,%s,%s,%s,%s,%s,0)',
-                        (mem_id, name, password, email, phone, '', permanent_address, temporary_address),
+                        (mem_id, name, password_hash, email, phone, '', permanent_address, temporary_address),
                     )
             flash('Member added.', 'success')
             return redirect(url_for('members'))
@@ -561,15 +572,29 @@ def add_member():
 def edit_member(row_num):
     if request.method == 'POST':
         try:
+            password = request.form.get('password')
+            name = request.form.get('name')
+            email = request.form.get('email')
+            phone = request.form.get('phone')
+            permanent_address = request.form.get('permanent_address')
+            temporary_address = request.form.get('temporary_address')
             with get_connection() as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        'UPDATE members SET name=%s, password=%s, email=%s, phone=%s,'
-                        ' permanent_address=%s, temporary_address=%s WHERE row_num=%s',
-                        (request.form.get('name'), request.form.get('password'),
-                         request.form.get('email'), request.form.get('phone'),
-                         request.form.get('permanent_address'), request.form.get('temporary_address'), row_num),
-                    )
+                    if password:
+                        cur.execute(
+                            'UPDATE members SET name=%s, password=%s, email=%s, phone=%s,'
+                            ' permanent_address=%s, temporary_address=%s WHERE row_num=%s',
+                            (name, generate_password_hash(password),
+                             email, phone,
+                             permanent_address, temporary_address, row_num),
+                        )
+                    else:
+                        cur.execute(
+                            'UPDATE members SET name=%s, email=%s, phone=%s,'
+                            ' permanent_address=%s, temporary_address=%s WHERE row_num=%s',
+                            (name, email, phone,
+                             permanent_address, temporary_address, row_num),
+                        )
             flash('Member updated.', 'success')
             return redirect(url_for('members'))
         except Exception as exc:
@@ -621,13 +646,14 @@ def add_employee():
             flash(f'Could not add employee: {err}', 'error')
             return render_template('add_employee.html')
         try:
+            password_hash = generate_password_hash(password) if password else None
             with get_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         'INSERT INTO employees (emp_id, name, user_id, password, email, phone, designation,'
                         ' salary, user_row_num, permanent_address, temporary_address, status)'
                         ' VALUES (%s,%s,NULL,%s,%s,%s,%s,%s,%s,%s,%s,0)',
-                        (emp_id, name, password, email, phone, designation, salary, '',
+                        (emp_id, name, password_hash, email, phone, designation, salary, '',
                          permanent_address, temporary_address),
                     )
             flash('Employee added.', 'success')
@@ -640,16 +666,33 @@ def add_employee():
 def edit_employee(row_num):
     if request.method == 'POST':
         try:
+            password = request.form.get('password')
+            name = request.form.get('name')
+            email = request.form.get('email')
+            phone = request.form.get('phone')
+            designation = request.form.get('designation')
+            salary = request.form.get('salary')
+            permanent_address = request.form.get('permanent_address')
+            temporary_address = request.form.get('temporary_address')
             with get_connection() as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        'UPDATE employees SET name=%s, password=%s, email=%s, phone=%s,'
-                        ' designation=%s, salary=%s, permanent_address=%s, temporary_address=%s WHERE row_num=%s',
-                        (request.form.get('name'), request.form.get('password'),
-                         request.form.get('email'), request.form.get('phone'), request.form.get('designation'),
-                         request.form.get('salary'), request.form.get('permanent_address'),
-                         request.form.get('temporary_address'), row_num),
-                    )
+                    if password:
+                        cur.execute(
+                            'UPDATE employees SET name=%s, password=%s, email=%s, phone=%s,'
+                            ' designation=%s, salary=%s, permanent_address=%s, temporary_address=%s WHERE row_num=%s',
+                            (name, generate_password_hash(password),
+                             email, phone, designation,
+                             salary, permanent_address,
+                             temporary_address, row_num),
+                        )
+                    else:
+                        cur.execute(
+                            'UPDATE employees SET name=%s, email=%s, phone=%s,'
+                            ' designation=%s, salary=%s, permanent_address=%s, temporary_address=%s WHERE row_num=%s',
+                            (name, email, phone, designation,
+                             salary, permanent_address,
+                             temporary_address, row_num),
+                        )
             flash('Employee updated.', 'success')
             return redirect(url_for('employees'))
         except Exception as exc:

@@ -1,4 +1,5 @@
 from langchain_core.tools import tool
+from werkzeug.security import generate_password_hash
 
 from tools.db import get_connection
 
@@ -12,6 +13,7 @@ def add_user(user_data: list) -> dict:
     row_num, user_id and status are auto-generated.
     """
     user_type, username, password, email, phone = user_data
+    password_hash = generate_password_hash(password) if password else None
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -22,7 +24,7 @@ def add_user(user_data: list) -> dict:
             cur.execute(
                 "INSERT INTO users (user_id, user_type, username, password, email, phone, status)"
                 " VALUES (%s,%s,%s,%s,%s,%s,%s)",
-                (user_id, user_type, username, password, email, phone, 0)
+                (user_id, user_type, username, password_hash, email, phone, 0)
             )
             cur.execute('SELECT * FROM users WHERE user_id=%s', (user_id,))
             return cur.fetchone()

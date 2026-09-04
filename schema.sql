@@ -21,13 +21,13 @@ CREATE TABLE IF NOT EXISTS users (
 ) AUTO_ID_CACHE = 1;
 
 INSERT INTO users (user_id, user_type, username, password, email, phone, status) VALUES
-('USER_1','Admin','admin','admin123','admin@library.com','9876543210',0),
-('USER_2','Employee','priya_emp','pass123','priya@library.com','9876543211',0),
-('USER_3','Employee','rahul_emp','pass123','rahul@library.com','9876543212',0),
-('USER_4','Member','amit_mem','pass123','amit@gmail.com','9876543213',0),
-('USER_5','Member','sneha_mem','pass123','sneha@gmail.com','9876543214',0),
-('USER_6','Member','rohit_mem','pass123','rohit@gmail.com','9876543215',0),
-('USER_7','Member','priya_mem','pass123','priya.s@gmail.com','9876543216',0);
+('USER_1','Admin','admin','scrypt:32768:8:1$2bZvFTQsXoI0cL1q$95faa2a1942ac6ad21f38c803be86a49102b1a645a641bf9ed076eb11a184d14983e1e1f9e76439bd87f6a5d4cda071971d4875d59ba7a9c7d3c16223e14b48f','admin@library.com','9876543210',0),
+('USER_2','Employee','priya_emp','scrypt:32768:8:1$XBzY2vQUbznaaWMX$e01d758867745715c35fb72657fd382b454366c24c3b7a6cb04c91c07a30150539bc1f65178bac5a6cca894aac284eeb27add08be266e55adb958aaf06e8b467','priya@library.com','9876543211',0),
+('USER_3','Employee','rahul_emp','scrypt:32768:8:1$XNCBOW4hcEVwG3BF$239267bd992e447d9b4024cdbce7771fdd84a63362403c07192400ede7ffb5e990ab451a919bc34c194e2205e983eb8268cd2ce110ac7cce03b214e757e68373','rahul@library.com','9876543212',0),
+('USER_4','Member','amit_mem','scrypt:32768:8:1$aJXbG5dTj3ZQysd6$66bd891bbd2e0de31d8d2cd9a904e8376e917e9095fd3f8c12f5c5f7fb5704f9b45aea4f55ccaf8ba985eebee93d74f135c0fe87218690a94a26c7b013b5d461','amit@gmail.com','9876543213',0),
+('USER_5','Member','sneha_mem','scrypt:32768:8:1$Z4AgSP9jh3OgDLTS$129c589efbcb38498dd467b5f37f8403b0d9035c6cdf17f9cd1025e6df476eca7b9a2008b8db58e12c1d3f102e3d335e9dbceeec75ae089bfd7027c5d52ad894','sneha@gmail.com','9876543214',0),
+('USER_6','Member','rohit_mem','scrypt:32768:8:1$xxYUxuRrP9gilA9P$4247d8a5816aa0c8ac3cde15b05dc09fb7b511adebfac2a24ed4c967d749503c46947309b207438678cd612706fbbdbcdf648b8da7abf8bb4500741dab2fee99','rohit@gmail.com','9876543215',0),
+('USER_7','Member','priya_mem','scrypt:32768:8:1$DFty7eDMfQxY3vww$4c8e854055750b93cfcc36c321fef98a0ea261b85b433b92ff8657f690075c892d5d7b5d47a5dffee81b688eae9843ddd63c8dbc54022c90f741ad6ba7ce827a','priya.s@gmail.com','9876543216',0);
 
 -- ============================================================
 -- 2. BOOK CATEGORY
@@ -135,10 +135,10 @@ CREATE TABLE IF NOT EXISTS members (
 ) AUTO_ID_CACHE = 1;
 
 INSERT INTO members (mem_id, name, user_id, password, email, phone, user_row_num, permanent_address, temporary_address, status) VALUES
-('MEM_1','Amit Sharma','USER_4','pass123','amit@gmail.com','9876543213',5,'Sector 17, Chandigarh','Sector 12, Kharar',0),
-('MEM_2','Sneha Verma','USER_5','pass123','sneha@gmail.com','9876543214',6,'Mohali Phase 7','Sector 22, Chandigarh',0),
-('MEM_3','Rohit Gupta','USER_6','pass123','rohit@gmail.com','9876543215',7,'Phase 5, Mohali','Sector 34, Chandigarh',0),
-('MEM_4','Priya Singh','USER_7','pass123','priya.s@gmail.com','9876543216',8,'Zirakpur','Sector 11, Panchkula',0);
+('MEM_1','Amit Sharma','USER_4','scrypt:32768:8:1$r6lbNPkK3ZxpyC4U$d513025120405013c1d15f882009159ae6d42d38e9fafc307b4366f363894232289a8e28b1cb8b5493f01003ee350f990ebbc160e62883a4236f2e7ea9414995','amit@gmail.com','9876543213',5,'Sector 17, Chandigarh','Sector 12, Kharar',0),
+('MEM_2','Sneha Verma','USER_5','scrypt:32768:8:1$W3uzovk65tmivOW7$ab41922fd6291c4e1e1b2757162d01b0cad67aff70800bfddc23f46f6d249505fbf275e4d62bd97e4b0310518f16062284f2cd7b3c01002a0719ce2ce46e2d45','sneha@gmail.com','9876543214',6,'Mohali Phase 7','Sector 22, Chandigarh',0),
+('MEM_3','Rohit Gupta','USER_6','scrypt:32768:8:1$Zh8qUMfRMmBCB0CV$5a0e40e06a79708cacb213d71ea05f4ad92f2f39a40fe492bcb02d769861077dfe2d9493ad7df0635b1a03807dbfd09720eb4841e1001c981e51997364d68169','rohit@gmail.com','9876543215',7,'Phase 5, Mohali','Sector 34, Chandigarh',0),
+('MEM_4','Priya Singh','USER_7','scrypt:32768:8:1$gCFXZCGDeANDrfhe$405256eda6145e141c1e360ff4fd97873527252f63e1811deb30068574acd2e6f7dd106c6f931ccb0d291718eecc14c95cd6102e30ac51f9e2d57dc320b3d841','priya.s@gmail.com','9876543216',8,'Zirakpur','Sector 11, Panchkula',0);
 
 -- ============================================================
 -- 6. EMPLOYEES
@@ -161,8 +161,8 @@ CREATE TABLE IF NOT EXISTS employees (
 ) AUTO_ID_CACHE = 1;
 
 INSERT INTO employees (emp_id, name, user_id, password, email, phone, designation, salary, user_row_num, permanent_address, temporary_address, status) VALUES
-('EMP_1','Priya Mehta','USER_2','pass123','priya@library.com','9876543211','Head Librarian',35000,3,'Phase 3, Mohali','Sector 20, Chandigarh',0),
-('EMP_2','Rahul Kapoor','USER_3','pass123','rahul@library.com','9876543212','Assistant Librarian',25000,4,'Phase 5, Mohali','Sector 15, Panchkula',0);
+('EMP_1','Priya Mehta','USER_2','scrypt:32768:8:1$HmculhL9zHQMQJCv$ecbe09b0535bb83e7ba3fff945309c6a58c5c7cb2683a921de2e0c8e9373884bda08d8c0a34f36f31295668c5a80a7b1ba780a8203bd07197210d976992162b7','priya@library.com','9876543211','Head Librarian',35000,3,'Phase 3, Mohali','Sector 20, Chandigarh',0),
+('EMP_2','Rahul Kapoor','USER_3','scrypt:32768:8:1$X12vMdqiH1xNHcgt$0b2051b0093d6b6a65685df567578f9fdad20f6f19f30ebfd4629b0a5d104f693a9f9bd95e2474f3850b02e2caaaad23613a99f7eea1b7f526c04e161be3e02b','rahul@library.com','9876543212','Assistant Librarian',25000,4,'Phase 5, Mohali','Sector 15, Panchkula',0);
 
 -- ============================================================
 -- 7. BOOK ISSUES

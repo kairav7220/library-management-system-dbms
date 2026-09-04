@@ -8,6 +8,7 @@
     <a href="{{ url_for('index') }}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back</a>
   </div>
   <form class="edit-form" method="POST" action="{{ url_for('update_user', row_num=row_num) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <div class="form-row">
       <div class="form-group">
         <label for="user_id"><i class="fa-solid fa-id-badge"></i> User ID</label>
@@ -25,7 +26,7 @@
       </div>
       <div class="form-group">
         <label for="password"><i class="fa-solid fa-lock"></i> Password</label>
-        <input id="password" type="password" name="password" value="{{ row[3] }}" required>
+        <input id="password" type="password" name="password" placeholder="Leave blank to keep current" autocomplete="new-password">
       </div>
     </div>
     <div class="form-group">

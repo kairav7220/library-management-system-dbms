@@ -1,4 +1,5 @@
 from langchain_core.tools import tool
+from werkzeug.security import generate_password_hash
 
 from tools.db import get_connection
 
@@ -17,12 +18,14 @@ def add_member(details: dict) -> dict:
             )
             n = (cur.fetchone()['m'] or 0) + 1
             mem_id = f'MEM_{n}'
+            raw_password = details.get('password')
+            password_hash = generate_password_hash(raw_password) if raw_password else None
             cur.execute(
                 'INSERT INTO members (mem_id, name, user_id, password, email, phone,'
                 ' user_row_num, permanent_address, temporary_address, status)'
                 ' VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
                 (mem_id, details.get('name'), details.get('user_id'),
-                 details.get('password'), details.get('email'),
+                 password_hash, details.get('email'),
                  details.get('phone'), details.get('user_row_num', ''),
                  details.get('permanent_address'),
                  details.get('temporary_address'), 0)
@@ -50,8 +53,13 @@ def update_member(row_num: int, details: dict) -> str:
     fields, vals = [], []
     for key, col in col_map.items():
         if key in details and details[key] is not None:
+            if key == 'password':
+                if not details[key]:
+                    continue
+                vals.append(generate_password_hash(details[key]))
+            else:
+                vals.append(details[key])
             fields.append(f'`{col}`=%s')
-            vals.append(details[key])
     if fields:
         vals.append(row_num)
         with get_connection() as conn:

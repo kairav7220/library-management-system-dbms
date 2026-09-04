@@ -1,5 +1,6 @@
 import os, pymysql
 from dotenv import load_dotenv
+from werkzeug.security import generate_password_hash
 load_dotenv()
 
 def get_connection():
@@ -28,13 +29,14 @@ def next_emp_id():
 def add_employee(name, user_id, password, email, phone, designation,
                  salary, user_row_num, permanent_address, temporary_address):
     emp_id = next_emp_id()
+    password_hash = generate_password_hash(password) if password else None
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 "INSERT INTO employees (emp_id, name, user_id, password, email, phone,"
                 " designation, salary, user_row_num, permanent_address, temporary_address, status)"
                 " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                (emp_id, name, user_id, password, email, phone, designation,
+                (emp_id, name, user_id, password_hash, email, phone, designation,
                  salary, user_row_num, permanent_address, temporary_address, 0)
             )
     return emp_id
@@ -42,6 +44,8 @@ def add_employee(name, user_id, password, email, phone, designation,
 def update_employee(row_num, *, name=None, user_id=None, password=None, email=None,
                     phone=None, designation=None, salary=None, user_row_num=None,
                     permanent_address=None, temporary_address=None):
+    if password:
+        password = generate_password_hash(password)
     fields, vals = [], []
     for col, v in (('name', name), ('user_id', user_id), ('password', password),
                    ('email', email), ('phone', phone), ('designation', designation),

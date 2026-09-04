@@ -7,6 +7,7 @@ pydantic
 openpyxl
 python-dotenv
 flask
+flask-wtf
 langgraph
 langsmith
 langchain-core

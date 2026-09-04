@@ -8,6 +8,7 @@
     <a href="{{ url_for('members') }}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back</a>
   </div>
   <form class="edit-form" method="POST" action="{{ url_for('add_member') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <div class="form-row">
       <div class="form-group">
         <label for="name"><i class="fa-solid fa-user"></i> Name</label>

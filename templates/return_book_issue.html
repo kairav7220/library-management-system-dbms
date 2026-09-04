@@ -8,6 +8,7 @@
     <a href="{{ url_for('book_issue') }}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back</a>
   </div>
   <form class="edit-form" method="POST" action="{{ url_for('return_book_issue', row_num=row_num) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <div class="form-group">
       <label for="recieved_by"><i class="fa-solid fa-user-check"></i> Received by (employee)</label>
       <select id="recieved_by" name="recieved_by" required>

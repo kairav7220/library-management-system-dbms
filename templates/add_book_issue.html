@@ -8,6 +8,7 @@
     <a href="{{ url_for('book_issue') }}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back</a>
   </div>
   <form class="edit-form" method="POST" action="{{ url_for('add_book_issue') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <div class="form-row">
       <div class="form-group">
         <label for="book_id"><i class="fa-solid fa-book"></i> Book</label>

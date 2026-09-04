@@ -34,6 +34,7 @@
       <p class="muted">Use your library account to continue.</p>
 
       <form class="login-form" method="POST" action="{{ url_for('login') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <div class="field">
           <label for="username">Username</label>
           <input id="username" type="text" name="username" placeholder="e.g. admin" autofocus required>
