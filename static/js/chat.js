@@ -11,6 +11,11 @@ var widget, launcher, thread, input, sendBtn, badge, greeting, sessionList, sess
 var busy = false;
 var unreadCount = 0;
 
+function csrfToken() {
+    var m = document.querySelector('meta[name="csrf-token"]');
+    return m ? m.getAttribute('content') : '';
+}
+
 function init() {
     widget   = document.getElementById('widget');
     launcher = document.getElementById('launcher');
@@ -353,7 +358,10 @@ function deleteSession(id, btn) {
     if (!btn) return;
     btn.classList.add('busy');
     btn.disabled = true;
-    fetch('/chat/sessions/' + encodeURIComponent(id), { method: 'DELETE' })
+    fetch('/chat/sessions/' + encodeURIComponent(id), {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': csrfToken() }
+    })
         .then(function (r) { return r.json(); })
         .then(function (data) {
             var item = btn.closest('.session-item');
@@ -430,7 +438,7 @@ function send() {
 
     fetch('/chat/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
         body: JSON.stringify({ message: text, session_id: sessionId })
     })
         .then(function (r) {
