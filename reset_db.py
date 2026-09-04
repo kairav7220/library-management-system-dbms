@@ -14,6 +14,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pymysql
 from dotenv import load_dotenv
 
+from tools.db import get_connection
+
 load_dotenv()
 
 TABLES = [
@@ -30,22 +32,6 @@ TABLES = [
     'logs',
     'customers',
 ]
-
-
-def get_connection():
-    host = os.getenv('MYSQL_HOST', 'localhost')
-    ssl = {'ssl': {}} if 'tidbcloud' in host else None
-    return pymysql.connect(
-        host=host,
-        port=int(os.getenv('MYSQL_PORT', '3306')),
-        user=os.getenv('MYSQL_USER', 'root'),
-        password=os.getenv('MYSQL_PASSWORD', 'root'),
-        database=os.getenv('MYSQL_DB', 'library_db'),
-        charset='utf8mb4',
-        cursorclass=pymysql.cursors.DictCursor,
-        autocommit=True,
-        ssl=ssl,
-    )
 
 
 def main():
