@@ -48,7 +48,7 @@ This is the **DBMS rewrite** of the original [Google-Sheets-based app](https://g
 - **📄 Audit Logging** — Every login/logout recorded in the `logs` table
 - **🗂️ Chat History & Resume** — Sessions persist; browse and resume past conversations
 - **🔎 RAG Book Search** (optional) — Semantic book discovery via Mistral embeddings + pgvector, requires a Postgres (`DATABASE_URL`) instance
-- **📱 Responsive UI** — Hanken Grotesk typography, Material 3 chat widget, dark "Reading Room" admin theme
+- **📱 Responsive UI** — Material 3 chat widget (Hanken Grotesk), admin pages in Space Grotesk + Source Sans 3, dark "Reading Room" admin theme
 
 ## Architecture
 
@@ -63,12 +63,12 @@ flowchart LR
   Classifier --> Circulation["🔄 Circulation Librarian<br/>(issue, return, sell)"]
   Classifier --> Membership["👥 Membership Services<br/>(members, subscriptions, payments)"]
   Classifier --> Reference["🔎 Reference Librarian<br/>(read-only, RAG)"]
-  Director --> DB1["🛠️ mysql_tools"]
+  Director --> DB1["🛠️ per-entity tools<br/>(via tools/db.py)"]
   Catalog --> DB1
   Circulation --> DB1
   Membership --> DB1
   Reference --> RAG["🧠 RAG + pgvector"]
-  RAG --> Tools2["📖 book_search_tool"]
+  RAG --> Tools2["📖 search_books_rag"]
   DB1 --> MySQL[("🐬 MySQL / TiDB Cloud")]
 ```
 
@@ -89,10 +89,10 @@ flowchart LR
 |---|---|---|
 | **🧭 Intent Classifier** | Routes each message to the right specialist | LCEL structured output (Pydantic) |
 | **🧑‍💼 Library Director** | Statistics, reports, overviews, greetings, ambiguous requests | SQL aggregates |
-| **📖 Catalog Librarian** | Add/edit/delete books, categories, genres | `book_tools`, `book_cat`, `book_genre` |
+| **📖 Catalog Librarian** | Add/edit/delete books, categories, genres | `book`, `book_cat`, `book_genre` |
 | **🔄 Circulation Librarian** | Issue, return, and sell books | `book_issue`, `book_sell` |
 | **👥 Membership Services** | Register members/employees, subscriptions, payments | `members`, `employees`, `subscriptions`, `payment` |
-| **🔎 Reference Librarian** | Book discovery, recommendations, collection questions (read-only) | RAG + `book_search_tool` |
+| **🔎 Reference Librarian** | Book discovery, recommendations, collection questions (read-only) | RAG + `search_books_rag` |
 
 ## Quick Start
 
@@ -217,14 +217,13 @@ library-management-system-dbms/
 ├── requirements.txt            # Python dependencies
 ├── .env.example                # Environment variable template
 ├── agents/
-│   ├── orchestrator.py         # Director classifier + graph wiring
 │   ├── director_agent.py       # Library Director (reports, overviews)
 │   ├── catalog_agent.py        # Catalog Librarian (books, categories, genres)
 │   ├── circulation_agent.py    # Circulation Librarian (issue/return/sell)
 │   ├── membership_agent.py     # Membership Services (members, subscriptions)
 │   └── reference_agent.py      # Reference Librarian (read-only, RAG)
-├── graph/
-│   ├── orchestrator.py         # StateGraph + intent classifier routing
+├── graph/                      # StateGraph + intent classifier routing
+│   ├── orchestrator.py         # Graph wiring + classifier
 │   ├── subgraphs.py            # Continuation routing
 │   ├── memory.py               # Session persistence
 │   └── state.py                # Graph state schema
@@ -233,26 +232,44 @@ library-management-system-dbms/
 │   ├── loader.py               # Book document loader
 │   └── config.py               # Embedding model config
 ├── tools/                      # LangChain @tool functions (agent ↔ DB bridge)
-│   └── db.py                   # Shared PyMySQL connection helper
+│   ├── db.py                   # Shared PyMySQL connection helper
+│   ├── llm.py                  # Mistral LLM factory
+│   ├── consult.py              # Agent consultation helpers
+│   ├── rag_tools.py            # RAG search tool (search_books_rag)
+│   ├── users.py                # User tools
+│   ├── book.py                 # Book tools
+│   ├── book_cat.py             # Book category tools
+│   ├── book_genre.py           # Book genre tools
+│   ├── members.py              # Member tools
+│   ├── employees.py            # Employee tools
+│   ├── subscriptions.py        # Subscription tools
+│   ├── payment.py              # Payment tools
+│   ├── book_sell.py            # Book sale tools (transactional)
+│   └── book_issue.py           # Book issue/return tools
 ├── templates/                  # Jinja2 admin pages
-│   ├── base.html               # Layout (user chip, logout, nav)
+│   ├── base.html               # Layout (user chip, logout, nav, footer)
 │   ├── login.html              # Login page
 │   ├── logs.html               # Admin audit log
 │   ├── index.html              # Users page
 │   ├── books.html              # Books page
+│   ├── book_category.html      # Categories page
+│   ├── book_genre.html         # Genres page
 │   ├── members.html            # Members page
 │   ├── employees.html          # Employees page
 │   ├── subscriptions.html      # Subscriptions page
 │   ├── payments.html           # Payments page
 │   ├── book_sell.html          # Book sell page
 │   ├── book_issue.html         # Book issue page
+│   ├── return_book_issue.html  # Book return form
+│   ├── form.html               # Shared user-credentials form
 │   ├── chat_widget.html        # Lumina Concierge chat widget
 │   └── add_*/edit_*.html       # Create / edit forms
-└── static/
-    ├── js/chat.js              # Streaming chat widget logic
-    └── styles/
-        ├── chat.css            # Material 3 chat styling
-        └── style.css           # Admin pages styling ("Reading Room" theme)
+├── static/
+│   ├── js/chat.js              # Streaming chat widget logic
+│   └── styles/
+│       ├── chat.css            # Material 3 chat styling
+│       └── style.css           # Admin pages styling ("Reading Room" theme)
+└── *.py (entity scripts)       # book.py, members.py, payment.py, … (legacy direct-DB helpers)
 ```
 
 ## License
