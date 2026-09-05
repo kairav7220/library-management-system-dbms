@@ -12,15 +12,19 @@
     <table>
       <thead>
         <tr>
-          {% for h in headers[2:11] %}<th>{{ h }}</th>{% endfor %}
+          {% for h in headers[2:4] %}<th>{{ h }}</th>{% endfor %}
+          {% for h in headers[5:11] %}<th>{{ h }}</th>{% endfor %}
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for row in rows %}
         <tr>
-          {% for cell in row.data[2:11] %}
+          {% for cell in row.data[2:4] %}
           <td data-label="{{ headers[loop.index0 + 2] }}">{{ cell }}</td>
+          {% endfor %}
+          {% for cell in row.data[5:11] %}
+          <td data-label="{{ headers[loop.index0 + 5] }}">{{ cell }}</td>
           {% endfor %}
           <td data-label="Actions">
             <div class="row-actions">
@@ -30,7 +34,7 @@
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="10" class="empty-state"><i class="fa-solid fa-inbox"></i><p>No active employees found.</p></td></tr>
+        <tr><td colspan="9" class="empty-state"><i class="fa-solid fa-inbox"></i><p>No active employees found.</p></td></tr>
         {% endfor %}
       </tbody>
     </table>
